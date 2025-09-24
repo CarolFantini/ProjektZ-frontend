@@ -7,7 +7,7 @@ import { Routes } from '@angular/router';
 import { provideRouter } from '@angular/router';
 
 const routes: Routes = [
-  { path: '', redirectTo: 'household-budget', pathMatch: 'full' },
+  { path: '', redirectTo: 'pages/household-budget', pathMatch: 'full' },
   {
     path: 'pages/household-budget',
     component: HouseholdBudget,
