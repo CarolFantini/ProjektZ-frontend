@@ -1,6 +1,28 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
-import { AppComponent } from './app/app.component';
+import { App } from './app/app';
+import { HouseholdBudget } from './app/pages/household-budget/household-budget';
+import { ReadingJournal } from './app/pages/reading-journal/reading-journal';
+import { Routes } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
-bootstrapApplication(AppComponent, appConfig)
+const routes: Routes = [
+  { path: '', redirectTo: 'household-budget', pathMatch: 'full' },
+  {
+    path: 'pages/household-budget',
+    component: HouseholdBudget,
+  },
+  {
+    path: 'pages/reading-journal',
+    component: ReadingJournal
+  }
+];
+
+bootstrapApplication(App, {
+  ...appConfig,
+  providers: [
+    ...(appConfig.providers || []),
+    provideRouter(routes)
+  ]
+})
   .catch((err) => console.error(err));
