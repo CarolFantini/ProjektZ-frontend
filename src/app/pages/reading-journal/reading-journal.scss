@@ -1,0 +1,28 @@
+#header-global {
+  border-bottom: 3px solid #13335a;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.middleContainer {
+  display: flex;
+  border: 5px solid blue;
+}
+
+.grid {
+  flex: 1;
+  border: 5px solid red;
+}
+
+.charts {
+  flex: 1;
+  border: 5px solid rgb(162, 0, 255);
+}
+
+.mainContainer {
+  border: 5px solid green;
+}
+
+.progressBar {
+  height: 40px;
+}
