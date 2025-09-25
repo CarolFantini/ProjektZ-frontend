@@ -5,6 +5,7 @@ import { HouseholdBudget } from './app/pages/household-budget/household-budget';
 import { ReadingJournal } from './app/pages/reading-journal/reading-journal';
 import { Routes } from '@angular/router';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 
 const routes: Routes = [
   { path: '', redirectTo: 'pages/household-budget', pathMatch: 'full' },
@@ -22,7 +23,8 @@ bootstrapApplication(App, {
   ...appConfig,
   providers: [
     ...(appConfig.providers || []),
-    provideRouter(routes)
+    provideRouter(routes),
+    provideHttpClient(),
   ]
 })
   .catch((err) => console.error(err));
