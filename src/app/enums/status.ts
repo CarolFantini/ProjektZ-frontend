@@ -1,7 +1,7 @@
 export enum Status {
-    InProgress,
-    Completed,
-    Paused,
-    Dropped,
-    ToRead
+    ToRead = 0,
+    InProgress = 1,
+    Paused = 2,
+    Finished = 3,
+    Dropped = 4
 }
