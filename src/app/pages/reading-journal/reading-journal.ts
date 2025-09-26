@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { FooterGlobal } from '../../common/footer-global/footer-global';
 import { MenuGlobal } from '../../common/menu-global/menu-global';
@@ -6,21 +6,25 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { ReadingJournalService } from '../../services/reading-journal-service';
 import { Book } from '../../models/reading-journal/book';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Genres } from '../../enums/genres';
 import { Status } from '../../enums/status';
 import { Formats } from '../../enums/formats';
 import { Author } from '../../models/reading-journal/author';
 import { Series } from '../../models/reading-journal/series';
+import { ChartsService } from '../../services/charts-service';
 
 @Component({
   selector: 'app-reading-journal',
-  imports: [MenuGlobal, FooterGlobal, FontAwesomeModule, ReactiveFormsModule, DatePipe],
+  imports: [MenuGlobal, FooterGlobal, FontAwesomeModule, ReactiveFormsModule, DatePipe, CurrencyPipe],
   templateUrl: './reading-journal.html',
   styleUrl: './reading-journal.scss'
 })
 export class ReadingJournal {
+  @ViewChild('formatChart') formatChart!: ElementRef;
+  @ViewChild('genresChart') genresChart!: ElementRef;
   private readingJournalService = inject(ReadingJournalService);
+  private chartsService = inject(ChartsService);
   private fb = inject(FormBuilder);
 
   titulo: string = 'Reading Journal';
@@ -28,6 +32,10 @@ export class ReadingJournal {
   modalButtonTitle: string = '';
   faPlus = faPlus;
   selectedBook?: Book;
+  totalPages: number = 0;
+  totalPrice: number = 0;
+  totalDaysSpent: number = 0;
+  totalBooks = 0;
 
   Genres = Genres;   // <--- assim você consegue usar no template
   Status = Status;
@@ -172,6 +180,7 @@ export class ReadingJournal {
 
   ngOnInit(): void {
     this.getAllBooks();
+    this.updateCounters();
 
     this.formats = Object.keys(Formats)
       .filter(key => isNaN(Number(key)))
@@ -186,6 +195,33 @@ export class ReadingJournal {
       .map(key => ({ key: Genres[key as keyof typeof Genres], value: key }));
   }
 
+  ngAfterViewInit() {
+    const countsFormat: { [key: string]: number } = {};
+    const countsGenres: { [key: string]: number } = {};
+
+    for (const book of this.books) {
+      const formatName = Formats[book.format];
+      countsFormat[formatName] = (countsFormat[formatName] || 0) + 1;
+    }
+
+    for (const book of this.books) {
+      if (book.genre && Array.isArray(book.genre)) {
+        for (const genre of book.genre) {
+          const genreName = Genres[genre];
+          countsGenres[genreName] = (countsGenres[genreName] || 0) + 1;
+        }
+      }
+    }
+
+    const labelsFormart = Object.keys(countsFormat);
+    const seriesFormart = Object.values(countsFormat);
+    const labelsGenres = Object.keys(countsGenres);
+    const seriesGenres = Object.values(countsGenres);
+
+    this.chartsService.renderDonutChart(this.formatChart.nativeElement, 'Formats', labelsFormart, seriesFormart);
+    this.chartsService.renderDonutChart(this.genresChart.nativeElement, 'Genres', labelsGenres, seriesGenres);
+  }
+
   getAllBooks(): void {
     this.readingJournalService.getAllBooks().subscribe({
       next: (data) => {
@@ -197,12 +233,45 @@ export class ReadingJournal {
     });
   }
 
+  updateCounters(): void {
+    const newPages = this.books.reduce((sum, book) => sum + (book.pages || 0), 0);
+    const newPrice = this.books.reduce((sum, book) => sum + (book.price || 0), 0);
+    const newDays = this.books.reduce((sum, book) => sum + (book.daysSpentReading || 0), 0);
+    const newBooks = this.books.length;
+
+    this.animateCounter("totalPages", newPages, 500);
+    this.animateCounter("totalPrice", newPrice, 500);
+    this.animateCounter("totalDaysSpent", newDays, 500);
+    this.animateCounter("totalBooks", newBooks, 500);
+  }
+
+  private animateCounter(
+    prop: "totalPages" | "totalPrice" | "totalDaysSpent" | "totalBooks",
+    target: number,
+    duration: number
+  ) {
+    let start = this[prop];
+    const step = Math.ceil((target - start) / (duration / 20)); // passo baseado em 20fps
+
+    const timer = setInterval(() => {
+      start += step;
+
+      if ((step > 0 && start >= target) || (step < 0 && start <= target)) {
+        this[prop] = target; // garante que não passe do valor
+        clearInterval(timer);
+      } else {
+        this[prop] = start;
+      }
+    }, 30);
+  }
+
   onSubmit() {
     if (this.bookForm.valid) {
       this.readingJournalService.createBook(this.bookForm.value).subscribe({
         next: (success) => {
           if (success) {
             this.getAllBooks();
+            this.updateCounters()
             this.bookForm.reset();
           }
         },
@@ -221,6 +290,7 @@ export class ReadingJournal {
         next: (success) => {
           if (success) {
             this.getAllBooks();
+            this.updateCounters()
             this.bookForm.reset();
           }
         },
@@ -258,7 +328,6 @@ export class ReadingJournal {
     return Formats[book.format];
   }
 
-  // Para abrir o modal de criação
   openCreateBook() {
     this.modalTitle = 'Add a Book';
 
@@ -266,7 +335,7 @@ export class ReadingJournal {
     this.bookForm.reset();
     this.bookForm.enable();
   }
-  // Para abrir o modal de edição
+
   openEditBook(book: Book) {
     this.modalTitle = 'Edit the book - ' + book.name;
     this.selectedBook = book;

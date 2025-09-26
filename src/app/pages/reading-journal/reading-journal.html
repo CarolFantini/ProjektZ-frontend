@@ -4,79 +4,125 @@
     <h1>{{ titulo }}</h1>
 </div>
 
-<div class="mainContainer">
-    <div class="card text-center">
-        <div class="card-body">
-            <h5 class="card-title">Shortcuts</h5>
-            <p class="card-text">Use o botão abaixo para adicionar um livro</p>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBookModal"
-                (click)="openCreateBook();">
-                <fa-icon [icon]="faPlus" class="icon-gu"></fa-icon>New Book
-            </button>
+<div class="mainContainer ms-3 me-3">
+    <div class="row mt-3 mb-3">
+
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm bg-dark text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Shortcuts</h5>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#createBookModal" (click)="openCreateBook();">
+                        <fa-icon [icon]="faPlus" class="icon-gu me-1"></fa-icon>New Book
+                    </button>
+                </div>
+            </div>
         </div>
+
+        <div class="col-md-2">
+            <div class="card text-center shadow-sm bg-dark text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Books Read</h6>
+                    <h3 class="text-danger">{{ totalBooks }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-2">
+            <div class="card text-center shadow-sm bg-dark text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Pages</h6>
+                    <h3 class="text-primary">{{ totalPages }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-2">
+            <div class="card text-center shadow-sm bg-dark text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Price</h6>
+                    <h3 class="text-success">{{ totalPrice | currency:'BRL' }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-2">
+            <div class="card text-center shadow-sm bg-dark text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Days Spent</h6>
+                    <h3 class="text-warning">{{ totalDaysSpent }}</h3>
+                </div>
+            </div>
+        </div>
+
     </div>
-    <div class="middleContainer">
-        <div class="grid">
-            <table class="table table-bordered table-striped table-hover table-responsive">
-                <thead class="table-dark">
-                    <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col">Author</th>
-                        <th scope="col">Publisher</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Pages</th>
-                        <th scope="col">Current Page</th>
-                        <th scope="col">Start Date</th>
-                        <th scope="col">End Date</th>
-                        <th scope="col">Genres</th>
-                        <th scope="col">Format</th>
-                        <th scope="col">Price</th>
-                        <th scope="col">Series</th>
-                        <th scope="col">Days Spent</th>
-                        <th scope="col">Progress</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (book of books; track book.id) {
-                    <tr style="cursor:pointer;" (click)="openEditBook(book)" data-bs-toggle="modal"
-                        data-bs-target="#createBookModal">
-                        <td scope="col">{{ book.name }}</td>
-                        <td scope="col">{{ book.author?.name }}</td>
-                        <td scope="col">{{ book.publisher }}</td>
-                        <td>{{ enumToString(book.status, Status) }}</td>
-                        <td scope="col">{{ book.pages }}</td>
-                        <td scope="col">{{ book.currentPage }}</td>
-                        <td scope="col">{{ book.startDate | date:'MM/dd/yyyy' }}</td>
-                        <td scope="col">{{ book.endDate | date:'MM/dd/yyyy' }}</td>
-                        <td>{{ enumToString(book.genre, Genres) }}</td>
-                        <td>{{ enumToString(book.format, Formats) }}</td>
-                        <td scope="col">{{ book.price }}</td>
-                        <td scope="col">{{ book.series?.name }}</td>
-                        <td scope="col">{{ book.daysSpentReading }}</td>
-                        <td scope="col">
-                            <div class="progress progressBar">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                                    [style.width.%]="book.progressPercentage" [class]="{
+</div>
+
+<div class="middleContainer ms-3 me-3">
+    <div class="grid">
+        <table class="table table-bordered table-striped table-hover table-responsive">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Author</th>
+                    <th scope="col">Publisher</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Pages</th>
+                    <th scope="col">Current Page</th>
+                    <th scope="col">Start Date</th>
+                    <th scope="col">End Date</th>
+                    <th scope="col">Genres</th>
+                    <th scope="col">Format</th>
+                    <th scope="col">Price</th>
+                    <th scope="col">Series</th>
+                    <th scope="col">Days Spent</th>
+                    <th scope="col">Progress</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (book of books; track book.id) {
+                <tr style="cursor:pointer;" (click)="openEditBook(book)" data-bs-toggle="modal"
+                    data-bs-target="#createBookModal">
+                    <td scope="col">{{ book.name }}</td>
+                    <td scope="col">{{ book.author?.name }}</td>
+                    <td scope="col">{{ book.publisher }}</td>
+                    <td>{{ enumToString(book.status, Status) }}</td>
+                    <td scope="col">{{ book.pages }}</td>
+                    <td scope="col">{{ book.currentPage }}</td>
+                    <td scope="col">{{ book.startDate | date:'MM/dd/yyyy' }}</td>
+                    <td scope="col">{{ book.endDate | date:'MM/dd/yyyy' }}</td>
+                    <td>{{ enumToString(book.genre, Genres) }}</td>
+                    <td>{{ enumToString(book.format, Formats) }}</td>
+                    <td scope="col">R${{ book.price }}</td>
+                    <td scope="col">{{ book.series?.name }}</td>
+                    <td scope="col">{{ book.daysSpentReading }}</td>
+                    <td scope="col">
+                        <div class="progress progressBar">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                [style.width.%]="book.progressPercentage" [class]="{
                                         'bg-danger': book.progressPercentage < 30,
                                         'bg-warning': book.progressPercentage >= 30 && book.progressPercentage < 70,
                                         'bg-success': book.progressPercentage >= 70
                                         }">
-                                </div>
                             </div>
-                            {{ book.progressPercentage }}%
-                        </td>
-                    </tr>
-                    }
-                </tbody>
-                <tfoot>
-                </tfoot>
-            </table>
-        </div>
-        <div class="charts">
-            Charts
+                        </div>
+                        {{ book.progressPercentage }}%
+                    </td>
+                </tr>
+                }
+            </tbody>
+            <tfoot>
+            </tfoot>
+        </table>
+    </div>
+    <div class="charts">
+        <div class="row">
+            <div class="col-md-6" #formatChart></div>
+            <div class="col-md-6" #genresChart></div>
         </div>
     </div>
 </div>
+
 
 <!-- Modal Create a book-->
 <div class="modal fade" id="createBookModal" tabindex="-1" aria-hidden="true">
