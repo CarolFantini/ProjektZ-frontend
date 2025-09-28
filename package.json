@@ -8,13 +8,6 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
-  "budgets": [
-    {
-      "type": "initial",
-      "maximumWarning": "3mb",
-      "maximumError": "5mb"
-    }
-  ],
   "prettier": {
     "printWidth": 100,
     "singleQuote": true,
