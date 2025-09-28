@@ -18,4 +18,8 @@ export class ReadingJournalService {
   createBook(book: Book): Observable<boolean> {
     return this.http.post<boolean>(`${this.apiUrl}/book/create`, book);
   }
+
+  deleteBook(id: string): Observable<boolean> {
+    return this.http.delete<boolean>(`${this.apiUrl}/book/delete/${id}`);
+  }
 }

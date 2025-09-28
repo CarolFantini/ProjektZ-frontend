@@ -6,6 +6,10 @@ import { ReadingJournal } from './app/pages/reading-journal/reading-journal';
 import { Routes } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeuix/themes/aura';
+import { MessageService } from 'primeng/api';
 
 const routes: Routes = [
   { path: '', redirectTo: 'pages/household-budget', pathMatch: 'full' },
@@ -25,6 +29,16 @@ bootstrapApplication(App, {
     ...(appConfig.providers || []),
     provideRouter(routes),
     provideHttpClient(),
+    provideAnimationsAsync(),
+    MessageService,
+    providePrimeNG({
+      theme: {
+        preset: Aura,
+        options: {
+          darkModeSelector: 'system'
+        }
+      }
+    })
   ]
 })
   .catch((err) => console.error(err));
