@@ -7,19 +7,7 @@
 <div class="mainContainer ms-3 me-3">
     <div class="row mt-3 mb-3">
 
-        <div class="col-md-4">
-            <div class="card text-center shadow-sm bg-dark text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Shortcuts</h5>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                        data-bs-target="#createBookModal" (click)="openCreateBook();">
-                        <fa-icon [icon]="faPlus" class="icon-gu me-1"></fa-icon>New Book
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-2">
+        <div class="col-md-3">
             <div class="card text-center shadow-sm bg-dark text-white">
                 <div class="card-body">
                     <h6 class="card-title">Books Read</h6>
@@ -28,7 +16,7 @@
             </div>
         </div>
 
-        <div class="col-md-2">
+        <div class="col-md-3">
             <div class="card text-center shadow-sm bg-dark text-white">
                 <div class="card-body">
                     <h6 class="card-title">Total Pages</h6>
@@ -37,7 +25,7 @@
             </div>
         </div>
 
-        <div class="col-md-2">
+        <div class="col-md-3">
             <div class="card text-center shadow-sm bg-dark text-white">
                 <div class="card-body">
                     <h6 class="card-title">Total Price</h6>
@@ -46,7 +34,7 @@
             </div>
         </div>
 
-        <div class="col-md-2">
+        <div class="col-md-3">
             <div class="card text-center shadow-sm bg-dark text-white">
                 <div class="card-body">
                     <h6 class="card-title">Total Days Spent</h6>
@@ -60,60 +48,91 @@
 
 <div class="middleContainer ms-3 me-3">
     <div class="grid">
-        <table class="table table-bordered table-striped table-hover table-responsive">
-            <thead class="table-dark">
-                <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Author</th>
-                    <th scope="col">Publisher</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Pages</th>
-                    <th scope="col">Current Page</th>
-                    <th scope="col">Start Date</th>
-                    <th scope="col">End Date</th>
-                    <th scope="col">Genres</th>
-                    <th scope="col">Format</th>
-                    <th scope="col">Price</th>
-                    <th scope="col">Series</th>
-                    <th scope="col">Days Spent</th>
-                    <th scope="col">Progress</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (book of books; track book.id) {
-                <tr style="cursor:pointer;" (click)="openEditBook(book)" data-bs-toggle="modal"
-                    data-bs-target="#createBookModal">
-                    <td scope="col">{{ book.name }}</td>
-                    <td scope="col">{{ book.author?.name }}</td>
-                    <td scope="col">{{ book.publisher }}</td>
-                    <td>{{ enumToString(book.status, Status) }}</td>
-                    <td scope="col">{{ book.pages }}</td>
-                    <td scope="col">{{ book.currentPage }}</td>
-                    <td scope="col">{{ book.startDate | date:'MM/dd/yyyy' }}</td>
-                    <td scope="col">{{ book.endDate | date:'MM/dd/yyyy' }}</td>
-                    <td>{{ enumToString(book.genre, Genres) }}</td>
-                    <td>{{ enumToString(book.format, Formats) }}</td>
-                    <td scope="col">R${{ book.price }}</td>
-                    <td scope="col">{{ book.series?.name }}</td>
-                    <td scope="col">{{ book.daysSpentReading }}</td>
-                    <td scope="col">
-                        <div class="progress progressBar">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                                [style.width.%]="book.progressPercentage" [class]="{
-                                        'bg-danger': book.progressPercentage < 30,
-                                        'bg-warning': book.progressPercentage >= 30 && book.progressPercentage < 70,
-                                        'bg-success': book.progressPercentage >= 70
-                                        }">
-                            </div>
+        <button type="button" class="btn btn-primary" (click)="showDialog();" pButton icon="pi pi-external-link">View
+            Books</button>
+
+        <p-dialog [modal]="true" [maximizable]="true" appendTo="body" [(visible)]="dialogVisible"
+            [style]="{ width: '75vw' }">
+            <p-toast />
+
+            <p-toolbar class="mb-6">
+                <ng-template #start>
+                    <p-button label="New" icon="pi pi-plus" class="mr-2" (onClick)="showDialog();" />
+                </ng-template>
+
+                <ng-template #end>
+                    <p-button label="Export" icon="pi pi-upload" severity="secondary" (onClick)="exportCSV();" />
+                </ng-template>
+            </p-toolbar>
+
+            <p-table #dt stripedRows [scrollable]="true" [rowHover]="true" dataKey="id" [value]="books"
+                [globalFilterFields]="filterFields" scrollHeight="65vh" [columns]="cols">
+                <ng-template #caption>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>List of Books</h5>
                         </div>
-                        {{ book.progressPercentage }}%
-                    </td>
-                </tr>
-                }
-            </tbody>
-            <tfoot>
-            </tfoot>
-        </table>
+                        <div class="col-md-6 text-end">
+                            <p-iconfield>
+                                <input pInputText type="text" (input)="dt.filterGlobal($event.target.value, 'contains')"
+                                    placeholder="Search..." />
+                                <p-inputicon class="pi pi-search" />
+                            </p-iconfield>
+                        </div>
+                    </div>
+                </ng-template>
+                <ng-template #header>
+                    <tr>
+                        @for (col of cols; track col.field) {
+                        <th pSortableColumn="{{col.field}}">
+                            <div>
+                                {{col.header}}
+                                <p-sortIcon field="{{col.field}}" />
+                            </div>
+                        </th>
+                        }
+                        <th class="specialColumn"></th>
+                    </tr>
+                </ng-template>
+                <ng-template #body let-book>
+                    <tr>
+                        <td pFrozenColumn>{{ book.name }}</td>
+                        <td>{{ book.author?.name }}</td>
+                        <td>{{ book.publisher }}</td>
+                        <td>
+                            <p-tag [value]="enumToString(book.status, Status)" [severity]="getSeverity(book.status)" />
+                        </td>
+                        <td>{{ book.pages }}</td>
+                        <td>{{ book.currentPage }}</td>
+                        <td>{{ book.startDate | date:'MM/dd/yyyy' }}</td>
+                        <td>{{ book.endDate | date:'MM/dd/yyyy' }}</td>
+                        <td>{{ enumToString(book.genre, Genres) }}</td>
+                        <td>{{ enumToString(book.format, Formats) }}</td>
+                        <td>{{ book.price | currency:'BRL'}}</td>
+                        <td>{{ book.series?.name }}</td>
+                        <td>{{ book.daysSpentReading }}</td>
+                        <td>
+                            <div class="progress progressBar">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                    [style.width.%]="book.progressPercentage" [class]="{
+                                        'bg-danger': book.progressPercentage < 30,
+                                        'bg-warning': book.progressPercentage >= 30 && book.progressPercentage < 80,
+                                        'bg-success': book.progressPercentage >= 80
+                                        }">
+                                </div>
+                            </div>
+                            {{ book.progressPercentage }}%
+                        </td>
+                        <td>
+                            <p-button icon="pi pi-pencil" severity="info" class="me-2" [rounded]="true"
+                                [outlined]="true" (click)="showDialog();" />
+                            <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
+                                (click)="deleteBook(book.id);" />
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </p-dialog>
     </div>
     <div class="charts">
         <div class="row">
@@ -122,7 +141,6 @@
         </div>
     </div>
 </div>
-
 
 <!-- Modal Create a book-->
 <div class="modal fade" id="createBookModal" tabindex="-1" aria-hidden="true">
@@ -151,7 +169,7 @@
                             <input class="form-control" list="authorOptions" id="author" formControlName="author"
                                 required />
                             <datalist id="authorOptions">
-                                @for (author of authors; track author.name) {
+                                @for (author of authors; track author.id) {
                                 <option [value]="author.name"></option>
                                 }
                             </datalist>
@@ -178,7 +196,7 @@
                             <span class="input-group-text" id="series">Series</span>
                             <input class="form-control" list="seriesOptions" id="series" formControlName="series" />
                             <datalist id="seriesOptions">
-                                @for (serie of series; track serie.name) {
+                                @for (serie of series; track serie.id) {
                                 <option [value]="serie.name"></option>
                                 }
                             </datalist>

@@ -1,8 +1,6 @@
 import { Component, ElementRef, inject, ViewChild } from '@angular/core';
-import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { FooterGlobal } from '../../common/footer-global/footer-global';
 import { MenuGlobal } from '../../common/menu-global/menu-global';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { ReadingJournalService } from '../../services/reading-journal-service';
 import { Book } from '../../models/reading-journal/book';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -14,28 +12,65 @@ import { Author } from '../../models/reading-journal/author';
 import { Series } from '../../models/reading-journal/series';
 import { ChartsService } from '../../services/charts-service';
 
+import { TableModule } from 'primeng/table';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { Table } from 'primeng/table';
+import { DialogModule } from 'primeng/dialog';
+import { ButtonModule } from 'primeng/button';
+import { ToolbarModule } from 'primeng/toolbar';
+import { Tag } from 'primeng/tag';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
+
+interface Column {
+  field: string;
+  header: string;
+}
+
 @Component({
   selector: 'app-reading-journal',
-  imports: [MenuGlobal, FooterGlobal, FontAwesomeModule, ReactiveFormsModule, DatePipe, CurrencyPipe],
+  imports: [MenuGlobal, FooterGlobal, ReactiveFormsModule, DatePipe, CurrencyPipe,
+    TableModule, IconFieldModule, InputIconModule, DialogModule, ButtonModule, ToolbarModule, Tag, ToastModule],
   templateUrl: './reading-journal.html',
   styleUrl: './reading-journal.scss'
 })
 export class ReadingJournal {
   @ViewChild('formatChart') formatChart!: ElementRef;
   @ViewChild('genresChart') genresChart!: ElementRef;
+  @ViewChild('dt') dt!: Table;
   private readingJournalService = inject(ReadingJournalService);
   private chartsService = inject(ChartsService);
+  private messageService = inject(MessageService);
   private fb = inject(FormBuilder);
 
   titulo: string = 'Reading Journal';
   modalTitle: string = '';
   modalButtonTitle: string = '';
-  faPlus = faPlus;
   selectedBook?: Book;
   totalPages: number = 0;
   totalPrice: number = 0;
   totalDaysSpent: number = 0;
   totalBooks = 0;
+  dialogVisible: boolean = false;
+  cols: Column[] = [
+    { header: 'Name', field: 'name' },
+    { header: 'Author', field: 'author' },
+    { header: 'Publisher', field: 'publisher' },
+    { header: 'Status', field: 'status' },
+    { header: 'Pages', field: 'pages' },
+    { header: 'Current Page', field: 'currentPage' },
+    { header: 'Start Date', field: 'startDate' },
+    { header: 'End Date', field: 'endDate' },
+    { header: 'Genre', field: 'genre' },
+    { header: 'Format', field: 'format' },
+    { header: 'Price', field: 'price' },
+    { header: 'Series', field: 'series' },
+    { header: 'Days Spend', field: 'daysSpend' },
+    { header: 'Progress', field: 'progress' }
+  ];
+
+  filterFields: string[] = this.cols.map(col => col.field);
 
   Genres = Genres;   // <--- assim você consegue usar no template
   Status = Status;
@@ -60,7 +95,58 @@ export class ReadingJournal {
 
   books: Book[] = [
     new Book({
-      id: 1,
+      id: "1",
+      name: 'The Pragmatic Programmer',
+      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      pages: 352,
+      currentPage: 100,
+      startDate: new Date(2025, 8, 20),
+      endDate: new Date(2025, 8, 24),
+      genre: [Genres.Technology],
+      publisher: 'Addison-Wesley',
+      format: Formats.eBook,
+      description: 'A book about pragmatic approaches to software development.',
+      review: 'Excelente leitura para devs.',
+      status: Status.InProgress,
+      price: 199.90,
+      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+    }),
+    new Book({
+      id: "2",
+      name: 'Clean Code',
+      author: { id: 2, name: 'Robert C. Martin', books: [] } as Author,
+      pages: 464,
+      currentPage: 200,
+      startDate: new Date(2025, 7, 15),
+      endDate: new Date(2025, 7, 30),
+      genre: [Genres.Technology, Genres.NonFiction],
+      publisher: 'Prentice Hall',
+      format: Formats.ComicBook,
+      description: 'Guidelines for writing clean and maintainable code.',
+      review: 'Indispensável para qualquer programador.',
+      status: Status.Finished,
+      price: 249.50,
+      series: { id: 2, name: 'Clean Code Series', books: [] } as Series
+    }),
+    new Book({
+      id: "3",
+      name: 'Harry Potter and the Philosopher\'s Stone',
+      author: { id: 3, name: 'J.K. Rowling', books: [] } as Author,
+      pages: 223,
+      currentPage: 223,
+      startDate: new Date(2025, 0, 5),
+      endDate: new Date(2025, 0, 15),
+      genre: [Genres.Fantasy],
+      publisher: 'Bloomsbury',
+      format: Formats.Other,
+      description: 'The first book in the Harry Potter series.',
+      review: 'Clássico da fantasia moderna.',
+      status: Status.Finished,
+      price: 99.90,
+      series: { id: 3, name: 'Harry Potter', books: [] } as Series
+    }),
+    new Book({
+      id: "4",
       name: 'The Pragmatic Programmer',
       author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
       pages: 352,
@@ -77,38 +163,140 @@ export class ReadingJournal {
       series: { id: 1, name: 'Programming Mastery', books: [] } as Series
     }),
     new Book({
-      id: 2,
-      name: 'Clean Code',
-      author: { id: 2, name: 'Robert C. Martin', books: [] } as Author,
-      pages: 464,
-      currentPage: 200,
-      startDate: new Date(2025, 7, 15),
-      endDate: new Date(2025, 7, 30),
-      genre: [Genres.Technology, Genres.NonFiction],
-      publisher: 'Prentice Hall',
+      id: "5",
+      name: 'The Pragmatic Programmer',
+      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      pages: 352,
+      currentPage: 100,
+      startDate: new Date(2025, 8, 20),
+      endDate: new Date(2025, 8, 24),
+      genre: [Genres.Technology],
+      publisher: 'Addison-Wesley',
       format: Formats.Paperback,
-      description: 'Guidelines for writing clean and maintainable code.',
-      review: 'Indispensável para qualquer programador.',
-      status: Status.Finished,
-      price: 249.50,
-      series: { id: 2, name: 'Clean Code Series', books: [] } as Series
+      description: 'A book about pragmatic approaches to software development.',
+      review: 'Excelente leitura para devs.',
+      status: Status.InProgress,
+      price: 199.90,
+      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
     }),
     new Book({
-      id: 3,
-      name: 'Harry Potter and the Philosopher\'s Stone',
-      author: { id: 3, name: 'J.K. Rowling', books: [] } as Author,
-      pages: 223,
-      currentPage: 223,
-      startDate: new Date(2025, 0, 5),
-      endDate: new Date(2025, 0, 15),
-      genre: [Genres.Fantasy],
-      publisher: 'Bloomsbury',
+      id: "6",
+      name: 'The Pragmatic Programmer',
+      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      pages: 352,
+      currentPage: 100,
+      startDate: new Date(2025, 8, 20),
+      endDate: new Date(2025, 8, 24),
+      genre: [Genres.Technology],
+      publisher: 'Addison-Wesley',
       format: Formats.Hardcover,
-      description: 'The first book in the Harry Potter series.',
-      review: 'Clássico da fantasia moderna.',
-      status: Status.Finished,
-      price: 99.90,
-      series: { id: 3, name: 'Harry Potter', books: [] } as Series
+      description: 'A book about pragmatic approaches to software development.',
+      review: 'Excelente leitura para devs.',
+      status: Status.InProgress,
+      price: 199.90,
+      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+    }),
+    new Book({
+      id: "7",
+      name: 'sss',
+      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      pages: 352,
+      currentPage: 100,
+      startDate: new Date(2025, 8, 20),
+      endDate: new Date(),
+      genre: [Genres.Technology],
+      publisher: 'Addison-Wesley',
+      format: Formats.Hardcover,
+      description: 'A book about pragmatic approaches to software development.',
+      review: 'Excelente leitura para devs.',
+      status: Status.ToRead,
+      price: 199.90,
+      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+    }),
+    new Book({
+      id: "8",
+      name: 'The Pragmatic Programmer',
+      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      pages: 352,
+      currentPage: 100,
+      startDate: new Date(2025, 8, 20),
+      endDate: new Date(2025, 8, 24),
+      genre: [Genres.Technology],
+      publisher: 'Addison-Wesley',
+      format: Formats.Hardcover,
+      description: 'A book about pragmatic approaches to software development.',
+      review: 'Excelente leitura para devs.',
+      status: Status.ToRead,
+      price: 199.90,
+      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+    }),
+    new Book({
+      id: "9",
+      name: 'The Pragmatic Programmer',
+      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      pages: 352,
+      currentPage: 100,
+      startDate: new Date(2025, 8, 20),
+      endDate: new Date(2025, 8, 24),
+      genre: [Genres.Technology],
+      publisher: 'Addison-Wesley',
+      format: Formats.Hardcover,
+      description: 'A book about pragmatic approaches to software development.',
+      review: 'Excelente leitura para devs.',
+      status: Status.Paused,
+      price: 199.90,
+      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+    }),
+    new Book({
+      id: "10",
+      name: 'The Pragmatic Programmer',
+      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      pages: 352,
+      currentPage: 100,
+      startDate: new Date(2025, 8, 20),
+      endDate: new Date(2025, 8, 24),
+      genre: [Genres.Technology],
+      publisher: 'Addison-Wesley',
+      format: Formats.Hardcover,
+      description: 'A book about pragmatic approaches to software development.',
+      review: 'Excelente leitura para devs.',
+      status: Status.InProgress,
+      price: 199.90,
+      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+    }),
+    new Book({
+      id: "11",
+      name: 'The Pragmatic Programmer',
+      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      pages: 352,
+      currentPage: 100,
+      startDate: new Date(2025, 8, 20),
+      endDate: new Date(2025, 8, 24),
+      genre: [Genres.Technology],
+      publisher: 'Addison-Wesley',
+      format: Formats.Hardcover,
+      description: 'A book about pragmatic approaches to software development.',
+      review: 'Excelente leitura para devs.',
+      status: Status.InProgress,
+      price: 199.90,
+      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+    }),
+    new Book({
+      id: "12",
+      name: 'The Pragmatic Programmer',
+      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      pages: 352,
+      currentPage: 100,
+      startDate: new Date(2025, 8, 20),
+      endDate: new Date(2025, 8, 24),
+      genre: [Genres.Technology],
+      publisher: 'Addison-Wesley',
+      format: Formats.Hardcover,
+      description: 'A book about pragmatic approaches to software development.',
+      review: 'Excelente leitura para devs.',
+      status: Status.InProgress,
+      price: 199.90,
+      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
     })
   ];
 
@@ -179,7 +367,7 @@ export class ReadingJournal {
   }
 
   ngOnInit(): void {
-    this.getAllBooks();
+    //this.getAllBooks();
     this.updateCounters();
 
     this.formats = Object.keys(Formats)
@@ -220,6 +408,40 @@ export class ReadingJournal {
 
     this.chartsService.renderDonutChart(this.formatChart.nativeElement, 'Formats', labelsFormart, seriesFormart);
     this.chartsService.renderDonutChart(this.genresChart.nativeElement, 'Genres', labelsGenres, seriesGenres);
+  }
+
+  getSeverity(status: number) {
+    switch (status) {
+      case 1:
+        return 'secondary';
+      case 2:
+        return 'info';
+      case 3:
+        return 'warn';
+      case 4:
+        return 'success';
+      default:
+        return null;
+    }
+  }
+
+  showDialog() {
+    this.dialogVisible = true;
+  }
+
+  deleteBook(id: string) {
+    this.readingJournalService.deleteBook(id).subscribe({
+      next: (success) => {
+        if (success) {
+          this.messageService.add({ severity: 'danger', summary: 'Delete', detail: 'Livro deletado com sucesso!' });
+          this.getAllBooks();
+          this.updateCounters();
+        }
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    })
   }
 
   getAllBooks(): void {
@@ -265,6 +487,20 @@ export class ReadingJournal {
     }, 30);
   }
 
+  exportCSV() {
+    this.dt.exportCSV();
+    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Lista de livros exportada com sucesso!' });
+  }
+
+  // Função genérica para converter enums
+  enumToString(value: number | number[] | undefined, enumType: any): string {
+    if (!value) return ''; // cobre undefined, null ou array vazio
+    if (Array.isArray(value)) {
+      return value.map(v => enumType[v]).join(', ');
+    }
+    return enumType[value];
+  }
+
   onSubmit() {
     if (this.bookForm.valid) {
       this.readingJournalService.createBook(this.bookForm.value).subscribe({
@@ -301,31 +537,6 @@ export class ReadingJournal {
     } else {
       this.bookForm.markAllAsTouched(); // força validação na tela
     }
-  }
-
-  // Função genérica para converter enums
-  enumToString(value: number | number[] | undefined, enumType: any): string {
-    if (!value) return ''; // cobre undefined, null ou array vazio
-    if (Array.isArray(value)) {
-      return value.map(v => enumType[v]).join(', ');
-    }
-    return enumType[value];
-  }
-
-  // Função auxiliar para retornar os nomes dos gêneros como string
-  getGenresString(book: Book): string {
-    if (!book.genre || book.genre.length === 0) return '';
-    return book.genre.map(g => Genres[g]).join(', ');
-  }
-
-  // Converte o status em string
-  getStatusString(book: Book): string {
-    return Status[book.status];
-  }
-
-  // Converte o formato em string
-  getFormatString(book: Book): string {
-    return Formats[book.format];
   }
 
   openCreateBook() {
