@@ -1,8 +1,8 @@
 export enum Formats {
-    eBook = 0,
-    Paperback = 1,
-    Hardcover = 2,
-    Audiobook = 3,
-    ComicBook = 4,
-    Other = 5
+    eBook = 1,
+    Paperback = 2,
+    Hardcover = 3,
+    Audiobook = 4,
+    ComicBook = 5,
+    Other = 6
 }
