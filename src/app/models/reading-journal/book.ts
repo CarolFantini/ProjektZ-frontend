@@ -5,7 +5,7 @@ import { Author } from "./author";
 import { Series } from "./series";
 
 export class Book {
-  id!: number;
+  id!: string;
   name?: string;
   author?: Author;
   pages?: number;
