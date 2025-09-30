@@ -20,6 +20,8 @@
   height: 3vh;
 }
 
-.specialColumn {
-  min-width: 8rem;
+.column {
+  min-width: max-content;
+  white-space: nowrap;
+  /* mantém o texto em uma linha */
 }

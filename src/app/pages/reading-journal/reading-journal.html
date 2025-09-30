@@ -16,7 +16,7 @@
             </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card text-center shadow-sm bg-dark text-white">
                 <div class="card-body">
                     <h6 class="card-title">Total Pages</h6>
@@ -25,7 +25,7 @@
             </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card text-center shadow-sm bg-dark text-white">
                 <div class="card-body">
                     <h6 class="card-title">Total Price</h6>
@@ -34,7 +34,7 @@
             </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card text-center shadow-sm bg-dark text-white">
                 <div class="card-body">
                     <h6 class="card-title">Total Days Spent</h6>
@@ -43,104 +43,309 @@
             </div>
         </div>
 
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm bg-dark text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Average Time to Finish a Book</h6>
+                    <h3 class="text-warning">{{ (totalDaysSpent / totalBooks).toPrecision(1) }} Days</h3>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
 <div class="middleContainer ms-3 me-3">
-    <div class="grid">
-        <button type="button" class="btn btn-primary" (click)="showDialog();" pButton icon="pi pi-external-link">View
-            Books</button>
+    <button type="button" class="btn btn-primary" (click)="showDialog();" pButton icon="pi pi-external-link">View
+        Books</button>
 
-        <p-dialog [modal]="true" [maximizable]="true" appendTo="body" [(visible)]="dialogVisible"
-            [style]="{ width: '75vw' }">
-            <p-toast />
+    <p-dialog [maximizable]="true" appendTo="body" [(visible)]="dialogVisible" [style]="{ width: '75vw' }">
+        <p-toast />
 
-            <p-toolbar class="mb-6">
-                <ng-template #start>
-                    <p-button label="New" icon="pi pi-plus" class="mr-2" (onClick)="showDialog();" />
-                </ng-template>
+        <p-toolbar class="mb-6">
+            <ng-template #start>
+                <p-button label="New" icon="pi pi-plus" class="mr-2" (onClick)="showNewBookDialog();" />
+            </ng-template>
 
-                <ng-template #end>
-                    <p-button label="Export" icon="pi pi-upload" severity="secondary" (onClick)="exportCSV();" />
-                </ng-template>
-            </p-toolbar>
+            <ng-template #end>
+                <p-button label="Export" icon="pi pi-upload" severity="secondary" (onClick)="exportCSV();" />
+            </ng-template>
+        </p-toolbar>
 
-            <p-table #dt stripedRows [scrollable]="true" [rowHover]="true" dataKey="id" [value]="books"
-                [globalFilterFields]="filterFields" scrollHeight="65vh" [columns]="cols">
-                <ng-template #caption>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>List of Books</h5>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <p-iconfield>
-                                <input pInputText type="text" (input)="dt.filterGlobal($event.target.value, 'contains')"
-                                    placeholder="Search..." />
-                                <p-inputicon class="pi pi-search" />
-                            </p-iconfield>
-                        </div>
+        <p-table #dt stripedRows [scrollable]="true" [rowHover]="true" dataKey="id" [value]="books"
+            [globalFilterFields]="filterFields" scrollHeight="60vh" [columns]="cols">
+            <ng-template #caption>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>List of Books</h5>
                     </div>
-                </ng-template>
-                <ng-template #header>
-                    <tr>
-                        @for (col of cols; track col.field) {
-                        <th pSortableColumn="{{col.field}}">
-                            <div>
-                                {{col.header}}
-                                <p-sortIcon field="{{col.field}}" />
-                            </div>
-                        </th>
-                        }
-                        <th class="specialColumn"></th>
-                    </tr>
-                </ng-template>
-                <ng-template #body let-book>
-                    <tr>
-                        <td pFrozenColumn>{{ book.name }}</td>
-                        <td>{{ book.author?.name }}</td>
-                        <td>{{ book.publisher }}</td>
-                        <td>
-                            <p-tag [value]="enumToString(book.status, Status)" [severity]="getSeverity(book.status)" />
-                        </td>
-                        <td>{{ book.pages }}</td>
-                        <td>{{ book.currentPage }}</td>
-                        <td>{{ book.startDate | date:'MM/dd/yyyy' }}</td>
-                        <td>{{ book.endDate | date:'MM/dd/yyyy' }}</td>
-                        <td>{{ enumToString(book.genre, Genres) }}</td>
-                        <td>{{ enumToString(book.format, Formats) }}</td>
-                        <td>{{ book.price | currency:'BRL'}}</td>
-                        <td>{{ book.series?.name }}</td>
-                        <td>{{ book.daysSpentReading }}</td>
-                        <td>
-                            <div class="progress progressBar">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                                    [style.width.%]="book.progressPercentage" [class]="{
+                    <div class="col-md-6 text-end">
+                        <p-iconfield>
+                            <input pInputText type="text" (input)="dt.filterGlobal($event.target.value, 'contains')"
+                                placeholder="Search..." />
+                            <p-inputicon class="pi pi-search" />
+                        </p-iconfield>
+                    </div>
+                </div>
+            </ng-template>
+            <ng-template #header>
+                <tr>
+                    @for (col of cols; track col.field) {
+                    <th class="column" pSortableColumn="{{col.field}}">
+                        <div>
+                            {{col.header}}
+                            <p-sortIcon field="{{col.field}}" />
+                        </div>
+                    </th>
+                    }
+                    <th></th>
+                </tr>
+            </ng-template>
+            <ng-template #body let-book>
+                <tr>
+                    <td pFrozenColumn>{{ book.name }}</td>
+                    <td>{{ book.author?.name }}</td>
+                    <td>{{ book.publisher }}</td>
+                    <td>
+                        <p-tag [value]="enumToString(book.status, Status)" [severity]="getSeverity(book.status)" />
+                    </td>
+                    <td>{{ book.pages }}</td>
+                    <td>{{ book.currentPage }}</td>
+                    <td>{{ book.startDate | date:'MM/dd/yyyy' }}</td>
+                    <td>{{ book.endDate | date:'MM/dd/yyyy' }}</td>
+                    <td>{{ enumToString(book.genre, Genres) }}</td>
+                    <td>{{ enumToString(book.format, Formats) }}</td>
+                    <td>{{ book.price | currency:'BRL'}}</td>
+                    <td>{{ book.series?.name }}</td>
+                    <td>{{ book.daysSpentReading }}</td>
+                    <td>
+                        <div class="progress progressBar">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                [style.width.%]="book.progressPercentage" [class]="{
                                         'bg-danger': book.progressPercentage < 30,
                                         'bg-warning': book.progressPercentage >= 30 && book.progressPercentage < 80,
                                         'bg-success': book.progressPercentage >= 80
                                         }">
-                                </div>
                             </div>
-                            {{ book.progressPercentage }}%
-                        </td>
-                        <td>
-                            <p-button icon="pi pi-pencil" severity="info" class="me-2" [rounded]="true"
-                                [outlined]="true" (click)="showDialog();" />
-                            <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
-                                (click)="deleteBook(book.id);" />
-                        </td>
-                    </tr>
-                </ng-template>
-            </p-table>
-        </p-dialog>
-    </div>
+                        </div>
+                        {{ book.progressPercentage }}%
+                    </td>
+                    <td class="column">
+                        <p-button icon="pi pi-pencil" severity="info" class="me-2" [rounded]="true" [outlined]="true"
+                            (click)="showDialog();" />
+                        <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
+                            (click)="deleteBook(book.id);" />
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </p-dialog>
     <div class="charts">
         <div class="row">
-            <div class="col-md-6" #formatChart></div>
-            <div class="col-md-6" #genresChart></div>
+            <div class="col-md-4" #formatChart></div>
+            <div class="col-md-4" #genresChart></div>
         </div>
     </div>
 </div>
+
+<p-dialog [(visible)]="newBookDialogvisible" [modal]="true" [style]="{ width: '30vw' }">
+    <ng-template #header>
+        <div>
+            <span>{{this.modalTitle}}</span>
+        </div>
+    </ng-template>
+    <form class="row g-3" [formGroup]="bookForm" (ngSubmit)="onSubmit()">
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="name">Name</span>
+                </p-inputgroup-addon>
+                <input type="text" pInputText formControlName="name" id="name" required />
+            </p-inputgroup>
+            @if (bookForm.get('name')?.hasError('required') && bookForm.get('name')?.touched) {
+            <div class="text-danger">
+                Name is required
+            </div>
+            }
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="author">Author</span>
+                </p-inputgroup-addon>
+                <p-autoComplete formControlName="author" [suggestions]="filteredAuthors"
+                    (completeMethod)="filterAuthors($event)" field="name" required>
+                    <ng-template let-author pTemplate="item">
+                        <div>{{ author.name }}</div>
+                    </ng-template>
+                </p-autoComplete>
+            </p-inputgroup>
+            @if (bookForm.get('author')?.hasError('required') && bookForm.get('author')?.touched) {
+            <div class="text-danger">
+                Author is required
+            </div>
+            }
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="publisher">Publisher</span>
+                </p-inputgroup-addon>
+                <input type="text" pInputText formControlName="publisher" id="publisher" required />
+            </p-inputgroup>
+            @if (bookForm.get('publisher')?.hasError('required') && bookForm.get('publisher')?.touched) {
+            <div class="text-danger">
+                Publisher is required
+            </div>
+            }
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="series">Series</span>
+                </p-inputgroup-addon>
+                <p-autoComplete formControlName="series" [suggestions]="filteredSeries"
+                    (completeMethod)="filterSeries($event)" field="name">
+                    <ng-template let-series pTemplate="item">
+                        <div>{{ series.name }}</div>
+                    </ng-template>
+                </p-autoComplete>
+            </p-inputgroup>
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="genres">Genres</span>
+                </p-inputgroup-addon>
+                <p-multiselect [options]="genersList" formControlName="genre" optionLabel="value" optionValue="key"
+                    required />
+            </p-inputgroup>
+            @if (bookForm.get('genres')?.hasError('required') && bookForm.get('genres')?.touched) {
+            <div class="text-danger">
+                Genre is required
+            </div>
+            }
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="format">Format</span>
+                </p-inputgroup-addon>
+                <p-select id="format" formControlName="format" [options]="formats" optionLabel="value" optionValue="key"
+                    required />
+            </p-inputgroup>
+            @if (bookForm.get('format')?.hasError('required') && bookForm.get('format')?.touched) {
+            <div class="text-danger">
+                Format is required
+            </div>
+            }
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="pages">Pages</span>
+                </p-inputgroup-addon>
+                <p-inputnumber formControlName="pages" id="pages" inputId="integeronly" required />
+            </p-inputgroup>
+            @if (bookForm.get('pages')?.hasError('required') && bookForm.get('pages')?.touched) {
+            <div class="text-danger">
+                Pages is required
+            </div>
+            }
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="current-page">Current Page</span>
+                </p-inputgroup-addon>
+                <p-inputnumber formControlName="currentPage" id="current-page" inputId="integeronly" />
+            </p-inputgroup>
+            @if (currentPageErrors?.pagesRequired && bookForm.get('currentPage')?.touched) {
+            <div class="text-danger">
+                Pages must be filled if Current Page is filled
+            </div>
+            }
+            @if (currentPageErrors?.pagesInvalid && bookForm.get('currentPage')?.touched) {
+            <div class="text-danger">
+                Current Page must be less than or equal to Pages
+            </div>
+            }
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="start-date">Start Date</span>
+                </p-inputgroup-addon>
+                <p-datepicker id="start-date" formControlName="startDate" dateFormat="yy/mm/dd" [iconDisplay]="'input'"
+                    [showIcon]="true" />
+            </p-inputgroup>
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="end-date">End Date</span>
+                </p-inputgroup-addon>
+                <p-datepicker id="end-date" formControlName="endDate" dateFormat="yy/mm/dd" [iconDisplay]="'input'"
+                    [showIcon]="true" />
+            </p-inputgroup>
+            @if (endDateErrors?.dateRangeInvalid && bookForm.get('endDate')?.touched) {
+            <div class="text-danger">
+                End date must be after start date
+            </div>
+            }
+            @if (endDateErrors?.startDateRequired && bookForm.get('endDate')?.touched) {
+            <div class="text-danger">
+                Start Date must be filled if End Date is filled
+            </div>
+            }
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="status">Status</span>
+                </p-inputgroup-addon>
+                <p-select id="status" formControlName="status" [options]="statuses" optionLabel="value"
+                    optionValue="key" required />
+            </p-inputgroup>
+            @if (bookForm.get('status')?.hasError('required') && bookForm.get('status')?.touched) {
+            <div class="text-danger">
+                Status is required
+            </div>
+            }
+        </div>
+        <div class="col-md-6">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="price">Price</span>
+                </p-inputgroup-addon>
+                <p-inputnumber formControlName="price" inputId="price" mode="currency" currency="BRL" locale="pt-BR" />
+            </p-inputgroup>
+        </div>
+        <div class="col-12">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="description">Description</span>
+                </p-inputgroup-addon>
+                <textarea pTextarea rows="5" cols="65" id="description" formControlName="description"></textarea>
+            </p-inputgroup>
+        </div>
+        <div class="col-12">
+            <p-inputgroup>
+                <p-inputgroup-addon>
+                    <span id="review">Review</span>
+                </p-inputgroup-addon>
+                <textarea pTextarea rows="5" cols="70" id="review" formControlName="review"></textarea>
+            </p-inputgroup>
+        </div>
+        <div class="col-12 text-center">
+            <p-button type="submit" severity="info" [disabled]="bookForm.invalid" label="Save" />
+        </div>
+    </form>
+</p-dialog>
+
+
+
+
 
 <!-- Modal Create a book-->
 <div class="modal fade" id="createBookModal" tabindex="-1" aria-hidden="true">

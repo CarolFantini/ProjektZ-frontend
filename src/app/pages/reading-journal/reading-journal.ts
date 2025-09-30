@@ -22,6 +22,15 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { Tag } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { InputGroup } from 'primeng/inputgroup';
+import { InputGroupAddon } from 'primeng/inputgroupaddon';
+import { MultiSelect } from 'primeng/multiselect';
+import { DatePicker } from 'primeng/datepicker';
+import { AutoComplete } from 'primeng/autocomplete';
+import { Select } from 'primeng/select';
+import { InputNumber } from 'primeng/inputnumber';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
 
 interface Column {
   field: string;
@@ -31,7 +40,9 @@ interface Column {
 @Component({
   selector: 'app-reading-journal',
   imports: [MenuGlobal, FooterGlobal, ReactiveFormsModule, DatePipe, CurrencyPipe,
-    TableModule, IconFieldModule, InputIconModule, DialogModule, ButtonModule, ToolbarModule, Tag, ToastModule],
+    TableModule, IconFieldModule, InputIconModule, DialogModule, ButtonModule, ToolbarModule,
+    Tag, ToastModule, InputGroup, InputGroupAddon, MultiSelect, DatePicker, AutoComplete, Select,
+    InputNumber, InputText, Textarea],
   templateUrl: './reading-journal.html',
   styleUrl: './reading-journal.scss'
 })
@@ -53,9 +64,10 @@ export class ReadingJournal {
   totalDaysSpent: number = 0;
   totalBooks = 0;
   dialogVisible: boolean = false;
+  newBookDialogvisible: boolean = false;
   cols: Column[] = [
     { header: 'Name', field: 'name' },
-    { header: 'Author', field: 'author' },
+    { header: 'Author', field: 'author.name' },
     { header: 'Publisher', field: 'publisher' },
     { header: 'Status', field: 'status' },
     { header: 'Pages', field: 'pages' },
@@ -65,10 +77,12 @@ export class ReadingJournal {
     { header: 'Genre', field: 'genre' },
     { header: 'Format', field: 'format' },
     { header: 'Price', field: 'price' },
-    { header: 'Series', field: 'series' },
-    { header: 'Days Spend', field: 'daysSpend' },
-    { header: 'Progress', field: 'progress' }
+    { header: 'Series', field: 'series.name' },
+    { header: 'Days Spend', field: 'daysSpentReading' },
+    { header: 'Progress', field: 'progressPercentage' }
   ];
+  filteredAuthors: Author[] = [];
+  filteredSeries: Series[] = [];
 
   filterFields: string[] = this.cols.map(col => col.field);
 
@@ -97,7 +111,7 @@ export class ReadingJournal {
     new Book({
       id: "1",
       name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      author: { id: 1, name: 'Andrew Hunt' } as Author,
       pages: 352,
       currentPage: 100,
       startDate: new Date(2025, 8, 20),
@@ -109,12 +123,12 @@ export class ReadingJournal {
       review: 'Excelente leitura para devs.',
       status: Status.InProgress,
       price: 199.90,
-      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+      series: { id: 1, name: 'Programming Mastery' } as Series
     }),
     new Book({
       id: "2",
       name: 'Clean Code',
-      author: { id: 2, name: 'Robert C. Martin', books: [] } as Author,
+      author: { id: 2, name: 'Robert C. Martin' } as Author,
       pages: 464,
       currentPage: 200,
       startDate: new Date(2025, 7, 15),
@@ -126,12 +140,12 @@ export class ReadingJournal {
       review: 'Indispensável para qualquer programador.',
       status: Status.Finished,
       price: 249.50,
-      series: { id: 2, name: 'Clean Code Series', books: [] } as Series
+      series: { id: 2, name: 'Clean Code Series' } as Series
     }),
     new Book({
       id: "3",
       name: 'Harry Potter and the Philosopher\'s Stone',
-      author: { id: 3, name: 'J.K. Rowling', books: [] } as Author,
+      author: { id: 3, name: 'J.K. Rowling' } as Author,
       pages: 223,
       currentPage: 223,
       startDate: new Date(2025, 0, 5),
@@ -143,12 +157,12 @@ export class ReadingJournal {
       review: 'Clássico da fantasia moderna.',
       status: Status.Finished,
       price: 99.90,
-      series: { id: 3, name: 'Harry Potter', books: [] } as Series
+      series: { id: 3, name: 'Harry Potter' } as Series
     }),
     new Book({
       id: "4",
       name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      author: { id: 1, name: 'Andrew Hunt' } as Author,
       pages: 352,
       currentPage: 100,
       startDate: new Date(2025, 8, 20),
@@ -160,12 +174,12 @@ export class ReadingJournal {
       review: 'Excelente leitura para devs.',
       status: Status.InProgress,
       price: 199.90,
-      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+      series: { id: 1, name: 'Programming Mastery' } as Series
     }),
     new Book({
       id: "5",
       name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      author: { id: 1, name: 'Andrew Hunt' } as Author,
       pages: 352,
       currentPage: 100,
       startDate: new Date(2025, 8, 20),
@@ -177,12 +191,12 @@ export class ReadingJournal {
       review: 'Excelente leitura para devs.',
       status: Status.InProgress,
       price: 199.90,
-      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+      series: { id: 1, name: 'Programming Mastery' } as Series
     }),
     new Book({
       id: "6",
       name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      author: { id: 1, name: 'Andrew Hunt' } as Author,
       pages: 352,
       currentPage: 100,
       startDate: new Date(2025, 8, 20),
@@ -194,12 +208,12 @@ export class ReadingJournal {
       review: 'Excelente leitura para devs.',
       status: Status.InProgress,
       price: 199.90,
-      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+      series: { id: 1, name: 'Programming Mastery' } as Series
     }),
     new Book({
       id: "7",
       name: 'sss',
-      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      author: { id: 1, name: 'Andrew Hunt' } as Author,
       pages: 352,
       currentPage: 100,
       startDate: new Date(2025, 8, 20),
@@ -211,12 +225,12 @@ export class ReadingJournal {
       review: 'Excelente leitura para devs.',
       status: Status.ToRead,
       price: 199.90,
-      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+      series: { id: 1, name: 'Programming Mastery' } as Series
     }),
     new Book({
       id: "8",
       name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      author: { id: 1, name: 'Andrew Hunt' } as Author,
       pages: 352,
       currentPage: 100,
       startDate: new Date(2025, 8, 20),
@@ -228,12 +242,12 @@ export class ReadingJournal {
       review: 'Excelente leitura para devs.',
       status: Status.ToRead,
       price: 199.90,
-      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+      series: { id: 1, name: 'Programming Mastery' } as Series
     }),
     new Book({
       id: "9",
       name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      author: { id: 1, name: 'Andrew Hunt' } as Author,
       pages: 352,
       currentPage: 100,
       startDate: new Date(2025, 8, 20),
@@ -245,12 +259,12 @@ export class ReadingJournal {
       review: 'Excelente leitura para devs.',
       status: Status.Paused,
       price: 199.90,
-      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+      series: { id: 1, name: 'Programming Mastery' } as Series
     }),
     new Book({
       id: "10",
       name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      author: { id: 1, name: 'Andrew Hunt' } as Author,
       pages: 352,
       currentPage: 100,
       startDate: new Date(2025, 8, 20),
@@ -262,12 +276,12 @@ export class ReadingJournal {
       review: 'Excelente leitura para devs.',
       status: Status.InProgress,
       price: 199.90,
-      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+      series: { id: 1, name: 'Programming Mastery' } as Series
     }),
     new Book({
       id: "11",
       name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      author: { id: 1, name: 'Andrew Hunt' } as Author,
       pages: 352,
       currentPage: 100,
       startDate: new Date(2025, 8, 20),
@@ -279,12 +293,12 @@ export class ReadingJournal {
       review: 'Excelente leitura para devs.',
       status: Status.InProgress,
       price: 199.90,
-      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+      series: { id: 1, name: 'Programming Mastery' } as Series
     }),
     new Book({
       id: "12",
       name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt', books: [] } as Author,
+      author: { id: 1, name: 'Andrew Hunt' } as Author,
       pages: 352,
       currentPage: 100,
       startDate: new Date(2025, 8, 20),
@@ -296,7 +310,7 @@ export class ReadingJournal {
       review: 'Excelente leitura para devs.',
       status: Status.InProgress,
       price: 199.90,
-      series: { id: 1, name: 'Programming Mastery', books: [] } as Series
+      series: { id: 1, name: 'Programming Mastery' } as Series
     })
   ];
 
@@ -306,17 +320,12 @@ export class ReadingJournal {
     name: ['', Validators.required],
     author: ['', Validators.required],
     publisher: ['', Validators.required],
-    price: [null, [
-      Validators.pattern(/^\d+(\.\d{1,2})?$/)   // até 2 casas decimais
-    ]],
-    pages: [0, [
+    price: [null],
+    pages: [null, [
       Validators.required,
-      Validators.min(1),
-      Validators.pattern(/^\d+$/)   // somente inteiros
+      Validators.min(1)
     ]],
-    currentPage: [null, [
-      Validators.pattern(/^\d+$/)   // somente inteiros
-    ]],
+    currentPage: [null],
     startDate: [null],
     endDate: [null],
     genre: [[], Validators.required],
@@ -367,7 +376,7 @@ export class ReadingJournal {
   }
 
   ngOnInit(): void {
-    //this.getAllBooks();
+    this.getAllBooks();
     this.updateCounters();
 
     this.formats = Object.keys(Formats)
@@ -429,11 +438,19 @@ export class ReadingJournal {
     this.dialogVisible = true;
   }
 
+  showNewBookDialog() {
+    this.modalTitle = 'Add a Book';
+    this.newBookDialogvisible = true;
+
+    this.bookForm.reset();
+    this.bookForm.enable();
+  }
+
   deleteBook(id: string) {
     this.readingJournalService.deleteBook(id).subscribe({
       next: (success) => {
         if (success) {
-          this.messageService.add({ severity: 'danger', summary: 'Delete', detail: 'Livro deletado com sucesso!' });
+          this.messageService.add({ severity: 'success', summary: 'Delete', detail: 'Livro deletado com sucesso!' });
           this.getAllBooks();
           this.updateCounters();
         }
@@ -488,6 +505,7 @@ export class ReadingJournal {
   }
 
   exportCSV() {
+    this.dt.exportFilename = 'list_books';
     this.dt.exportCSV();
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Lista de livros exportada com sucesso!' });
   }
@@ -501,11 +519,26 @@ export class ReadingJournal {
     return enumType[value];
   }
 
+  filterAuthors(event: any) {
+    const query = event.query.toLowerCase();
+    this.filteredAuthors = this.authors.filter(a =>
+      a.name?.toLowerCase().includes(query)
+    );
+  }
+
+  filterSeries(event: any) {
+    const query = event.query.toLowerCase();
+    this.filteredSeries = this.series.filter(a =>
+      a.name?.toLowerCase().includes(query)
+    );
+  }
+
   onSubmit() {
     if (this.bookForm.valid) {
       this.readingJournalService.createBook(this.bookForm.value).subscribe({
         next: (success) => {
           if (success) {
+            this.messageService.add({ severity: 'success', summary: 'Create', detail: 'Livro criado com sucesso!' });
             this.getAllBooks();
             this.updateCounters()
             this.bookForm.reset();
@@ -521,11 +554,13 @@ export class ReadingJournal {
   }
 
   onEdit() {
+    // atualizar método do service para edit e não create
     if (this.bookForm.valid) {
       this.readingJournalService.createBook(this.bookForm.value).subscribe({
         next: (success) => {
           if (success) {
             this.getAllBooks();
+            this.messageService.add({ severity: 'success', summary: 'Edit', detail: 'Livro editado com sucesso!' });
             this.updateCounters()
             this.bookForm.reset();
           }
