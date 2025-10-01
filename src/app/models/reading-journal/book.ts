@@ -6,20 +6,20 @@ import { Series } from "./series";
 
 export class Book {
   id!: string;
-  name?: string;
-  author?: Author;
-  pages?: number;
+  name!: string;
+  author!: Author;
+  publisher!: string;
+  genre!: Genres[];
+  format!: Formats;
+  pages!: number;
   currentPage?: number;
   startDate?: Date;
   endDate?: Date;
-  genre?: Genres[];
-  publisher?: string;
-  format!: Formats;
+  status!: Status;
+  price?: number;
+  series?: Series;
   description?: string;
   review?: string;
-  status!: Status;
-  price!: number;
-  series?: Series;
 
   constructor(init?: Partial<Book>) {
     Object.assign(this, init);
