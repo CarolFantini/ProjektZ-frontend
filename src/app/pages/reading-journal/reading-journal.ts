@@ -17,7 +17,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { Table } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
+import { ButtonModule, ButtonSeverity } from 'primeng/button';
 import { ToolbarModule } from 'primeng/toolbar';
 import { Tag } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
@@ -31,6 +31,7 @@ import { Select } from 'primeng/select';
 import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
+import { forkJoin, of, switchMap } from 'rxjs';
 
 interface Column {
   field: string;
@@ -57,25 +58,26 @@ export class ReadingJournal {
 
   titulo: string = 'Reading Journal';
   modalTitle: string = '';
-  modalButtonTitle: string = '';
   selectedBook?: Book;
+  isEditMode: boolean = false;
   totalPages: number = 0;
   totalPrice: number = 0;
   totalDaysSpent: number = 0;
-  totalBooks = 0;
+  totalBooks: number = 0;
+  tableDialogVisible: boolean = false;
   dialogVisible: boolean = false;
-  newBookDialogvisible: boolean = false;
+  buttonSeverity: ButtonSeverity = 'success';
   cols: Column[] = [
     { header: 'Name', field: 'name' },
     { header: 'Author', field: 'author.name' },
     { header: 'Publisher', field: 'publisher' },
-    { header: 'Status', field: 'status' },
+    { header: 'Genre', field: 'genre' },
+    { header: 'Format', field: 'format' },
     { header: 'Pages', field: 'pages' },
     { header: 'Current Page', field: 'currentPage' },
     { header: 'Start Date', field: 'startDate' },
     { header: 'End Date', field: 'endDate' },
-    { header: 'Genre', field: 'genre' },
-    { header: 'Format', field: 'format' },
+    { header: 'Status', field: 'status' },
     { header: 'Price', field: 'price' },
     { header: 'Series', field: 'series.name' },
     { header: 'Days Spend', field: 'daysSpentReading' },
@@ -329,7 +331,7 @@ export class ReadingJournal {
     startDate: [null],
     endDate: [null],
     genre: [[], Validators.required],
-    series: [''],
+    series: [null],
     format: [null, Validators.required],
     status: [null, Validators.required],
     description: [''],
@@ -422,28 +424,64 @@ export class ReadingJournal {
   getSeverity(status: number) {
     switch (status) {
       case 1:
-        return 'secondary';
+        return 'success';
       case 2:
         return 'info';
       case 3:
         return 'warn';
       case 4:
-        return 'success';
+        return 'secondary';
       default:
         return null;
     }
   }
 
   showDialog() {
+    this.tableDialogVisible = true;
+  }
+
+  openCreateDialog() {
+    this.modalTitle = 'Add a Book';
+    this.buttonSeverity = 'success';
+    this.isEditMode = false;
     this.dialogVisible = true;
   }
 
-  showNewBookDialog() {
-    this.modalTitle = 'Add a Book';
-    this.newBookDialogvisible = true;
+  openEditDialog(book: Book) {
+    this.selectedBook = book;
+    this.modalTitle = 'Edit a Book - ' + book.name;
+    this.buttonSeverity = 'warn';
+    this.isEditMode = true;
+    this.dialogVisible = true;
 
-    this.bookForm.reset();
-    this.bookForm.enable();
+    this.bookForm.patchValue({
+      name: book.name || '',
+      author: book.author?.name || '',
+      publisher: book.publisher || '',
+      price: book.price ?? null,
+      pages: book.pages ?? null,
+      currentPage: book.currentPage ?? null,
+      startDate: book.startDate ? new Date(book.startDate) : null,
+      endDate: book.endDate ? new Date(book.endDate) : null,
+      genre: book.genre || [],
+      series: book.series?.name || '',
+      format: book.format,
+      status: book.status,
+      description: book.description || '',
+      review: book.review || ''
+    });
+
+    if (book.startDate) {
+      this.bookForm.get('startDate')?.disable();
+    } else {
+      this.bookForm.get('startDate')?.enable();
+    }
+
+    this.bookForm.get('name')?.disable();
+    this.bookForm.get('author')?.disable();
+    this.bookForm.get('publisher')?.disable();
+    this.bookForm.get('format')?.disable();
+    this.bookForm.get('pages')?.disable();
   }
 
   deleteBook(id: string) {
@@ -533,81 +571,81 @@ export class ReadingJournal {
     );
   }
 
-  onSubmit() {
-    if (this.bookForm.valid) {
-      this.readingJournalService.createBook(this.bookForm.value).subscribe({
-        next: (success) => {
-          if (success) {
-            this.messageService.add({ severity: 'success', summary: 'Create', detail: 'Livro criado com sucesso!' });
-            this.getAllBooks();
-            this.updateCounters()
-            this.bookForm.reset();
-          }
-        },
-        error: (err) => {
-          console.error(err);
-        }
-      })
-    } else {
-      this.bookForm.markAllAsTouched(); // força validação na tela
-    }
-  }
-
-  onEdit() {
-    // atualizar método do service para edit e não create
-    if (this.bookForm.valid) {
-      this.readingJournalService.createBook(this.bookForm.value).subscribe({
-        next: (success) => {
-          if (success) {
-            this.getAllBooks();
-            this.messageService.add({ severity: 'success', summary: 'Edit', detail: 'Livro editado com sucesso!' });
-            this.updateCounters()
-            this.bookForm.reset();
-          }
-        },
-        error: (err) => {
-          console.error(err);
-        }
-      })
-    } else {
-      this.bookForm.markAllAsTouched(); // força validação na tela
-    }
-  }
-
-  openCreateBook() {
-    this.modalTitle = 'Add a Book';
-
-    this.selectedBook = undefined;
-    this.bookForm.reset();
-    this.bookForm.enable();
-  }
-
-  openEditBook(book: Book) {
-    this.modalTitle = 'Edit the book - ' + book.name;
+  finishBook(book: Book) {
+    // TODO
     this.selectedBook = book;
+  }
 
-    this.bookForm.get('name')?.disable();
-    this.bookForm.get('author')?.disable();
-    this.bookForm.get('publisher')?.disable();
-    this.bookForm.get('format')?.disable();
-    this.bookForm.get('pages')?.disable();
+  onSubmit() {
+    // REVISAR
+    if (!this.bookForm.valid) {
+      this.bookForm.markAllAsTouched();
+      return;
+    }
 
-    // Preenche o formulário com os dados do livro
-    this.bookForm.patchValue({
-      name: book.name || '',
-      author: book.author?.name || '',
-      publisher: book.publisher || '',
-      price: book.price ?? null,
-      pages: book.pages ?? null,
-      currentPage: book.currentPage ?? null,
-      startDate: book.startDate ? new Date(book.startDate) : null,
-      endDate: book.endDate ? new Date(book.endDate) : null,
-      genre: book.genre || [],
-      series: book.series?.name || '',
-      format: book.format,
-      status: book.status,
-      description: book.description || '',
-      review: book.review || ''
-    });
+    let formValue = { ...this.bookForm.value };
+
+    // observável para criar o autor se for string, senão devolve o próprio objeto
+    const author$ =
+      typeof formValue.author === 'string'
+        ? this.readingJournalService.createAuthor(formValue.author)
+        : of(formValue.author);
+
+    // observável para criar a série se for string, senão devolve o próprio objeto
+    const series$ =
+      typeof formValue.series === 'string'
+        ? this.readingJournalService.createSeries(formValue.series)
+        : of(formValue.series);
+
+    if (this.isEditMode) {
+      forkJoin([author$, series$])
+        .pipe(
+          switchMap(([author, series]) => {
+            formValue = { ...formValue, author, series };
+            return this.readingJournalService.editBook(formValue);
+          })
+        ).subscribe({
+          next: (success) => {
+            if (success) {
+              this.messageService.add({
+                severity: 'success',
+                summary: 'Edit',
+                detail: 'Livro editado com sucesso!'
+              });
+              this.getAllBooks();
+              this.updateCounters()
+              this.bookForm.reset();
+            }
+          },
+          error: (err) => {
+            console.error(err);
+          }
+        })
+    } else {
+      forkJoin([author$, series$])
+        .pipe(
+          switchMap(([author, series]) => {
+            formValue = { ...formValue, author, series };
+            return this.readingJournalService.createBook(formValue);
+          })
+        )
+        .subscribe({
+          next: (success) => {
+            if (success) {
+              this.messageService.add({
+                severity: 'success',
+                summary: 'Create',
+                detail: 'Livro criado com sucesso!'
+              });
+              this.getAllBooks();
+              this.updateCounters();
+            }
+          },
+          error: (err) => {
+            console.error(err);
+          }
+        });
+    }
+    this.dialogVisible = false;
   }
 }

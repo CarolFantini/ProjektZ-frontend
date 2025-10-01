@@ -47,7 +47,7 @@
             <div class="card text-center shadow-sm bg-dark text-white">
                 <div class="card-body">
                     <h6 class="card-title">Average Time to Finish a Book</h6>
-                    <h3 class="text-warning">{{ (totalDaysSpent / totalBooks).toPrecision(1) }} Days</h3>
+                    <h3 class="text-primary">{{ (totalDaysSpent / totalBooks).toPrecision(1) }} Days</h3>
                 </div>
             </div>
         </div>
@@ -56,15 +56,14 @@
 </div>
 
 <div class="middleContainer ms-3 me-3">
-    <button type="button" class="btn btn-primary" (click)="showDialog();" pButton icon="pi pi-external-link">View
-        Books</button>
+    <p-button label="View Books" severity="info" icon="pi pi-external-link" class="mr-2" (onClick)="showDialog();" />
 
-    <p-dialog [maximizable]="true" appendTo="body" [(visible)]="dialogVisible" [style]="{ width: '75vw' }">
+    <p-dialog [maximizable]="true" appendTo="body" [(visible)]="tableDialogVisible" [style]="{ width: '75vw' }">
         <p-toast />
 
         <p-toolbar class="mb-6">
             <ng-template #start>
-                <p-button label="New" icon="pi pi-plus" class="mr-2" (onClick)="showNewBookDialog();" />
+                <p-button label="New" icon="pi pi-plus" class="mr-2" (onClick)="openCreateDialog();" />
             </ng-template>
 
             <ng-template #end>
@@ -106,15 +105,15 @@
                     <td pFrozenColumn>{{ book.name }}</td>
                     <td>{{ book.author?.name }}</td>
                     <td>{{ book.publisher }}</td>
-                    <td>
-                        <p-tag [value]="enumToString(book.status, Status)" [severity]="getSeverity(book.status)" />
-                    </td>
+                    <td>{{ enumToString(book.genre, Genres) }}</td>
+                    <td>{{ enumToString(book.format, Formats) }}</td>
                     <td>{{ book.pages }}</td>
                     <td>{{ book.currentPage }}</td>
                     <td>{{ book.startDate | date:'MM/dd/yyyy' }}</td>
                     <td>{{ book.endDate | date:'MM/dd/yyyy' }}</td>
-                    <td>{{ enumToString(book.genre, Genres) }}</td>
-                    <td>{{ enumToString(book.format, Formats) }}</td>
+                    <td>
+                        <p-tag [value]="enumToString(book.status, Status)" [severity]="getSeverity(book.status)" />
+                    </td>
                     <td>{{ book.price | currency:'BRL'}}</td>
                     <td>{{ book.series?.name }}</td>
                     <td>{{ book.daysSpentReading }}</td>
@@ -131,10 +130,12 @@
                         {{ book.progressPercentage }}%
                     </td>
                     <td class="column">
-                        <p-button icon="pi pi-pencil" severity="info" class="me-2" [rounded]="true" [outlined]="true"
-                            (click)="showDialog();" />
-                        <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
-                            (click)="deleteBook(book.id);" />
+                        <p-button title="Click to edit the book" icon="pi pi-pencil" severity="help" class="me-2"
+                            [outlined]="true" [rounded]="true" (click)="openEditDialog(book);" />
+                        <p-button title="Click to delete the book" icon="pi pi-trash" severity="danger" class="me-2"
+                            [outlined]="true" [rounded]="true" (click)="deleteBook(book.id);" />
+                        <p-button title="Click to finish the book" icon="pi pi-check" severity="success"
+                            [outlined]="true" [rounded]="true" (click)="finishBook(book);" />
                     </td>
                 </tr>
             </ng-template>
@@ -148,7 +149,7 @@
     </div>
 </div>
 
-<p-dialog [(visible)]="newBookDialogvisible" [modal]="true" [style]="{ width: '30vw' }">
+<p-dialog [(visible)]="dialogVisible" [modal]="true" [style]="{ width: '30vw' }">
     <ng-template #header>
         <div>
             <span>{{this.modalTitle}}</span>
@@ -220,7 +221,7 @@
                 <p-multiselect [options]="genersList" formControlName="genre" optionLabel="value" optionValue="key"
                     required />
             </p-inputgroup>
-            @if (bookForm.get('genres')?.hasError('required') && bookForm.get('genres')?.touched) {
+            @if (bookForm.get('genre')?.hasError('required') && bookForm.get('genre')?.touched) {
             <div class="text-danger">
                 Genre is required
             </div>
@@ -276,7 +277,7 @@
                 <p-inputgroup-addon>
                     <span id="start-date">Start Date</span>
                 </p-inputgroup-addon>
-                <p-datepicker id="start-date" formControlName="startDate" dateFormat="yy/mm/dd" [iconDisplay]="'input'"
+                <p-datepicker id="start-date" formControlName="startDate" dateFormat="mm/dd/yy" [iconDisplay]="'input'"
                     [showIcon]="true" />
             </p-inputgroup>
         </div>
@@ -285,7 +286,7 @@
                 <p-inputgroup-addon>
                     <span id="end-date">End Date</span>
                 </p-inputgroup-addon>
-                <p-datepicker id="end-date" formControlName="endDate" dateFormat="yy/mm/dd" [iconDisplay]="'input'"
+                <p-datepicker id="end-date" formControlName="endDate" dateFormat="mm/dd/yy" [iconDisplay]="'input'"
                     [showIcon]="true" />
             </p-inputgroup>
             @if (endDateErrors?.dateRangeInvalid && bookForm.get('endDate')?.touched) {
@@ -338,214 +339,10 @@
             </p-inputgroup>
         </div>
         <div class="col-12 text-center">
-            <p-button type="submit" severity="info" [disabled]="bookForm.invalid" label="Save" />
+            <p-button type="submit" [severity]="buttonSeverity" [disabled]="bookForm.invalid"
+                label="{{ isEditMode ? 'Edit' : 'Save' }}" />
         </div>
     </form>
 </p-dialog>
-
-
-
-
-
-<!-- Modal Create a book-->
-<div class="modal fade" id="createBookModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">{{this.modalTitle}}</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form class="row g-3" [formGroup]="bookForm" (ngSubmit)="onSubmit()">
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text" id="name">Name</span>
-                            <input type="text" class="form-control" id="name" formControlName="name" required>
-                        </div>
-                        @if (bookForm.get('name')?.hasError('required') && bookForm.get('name')?.touched) {
-                        <div class="text-danger">
-                            Name is required
-                        </div>
-                        }
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text" id="author">Author</span>
-                            <input class="form-control" list="authorOptions" id="author" formControlName="author"
-                                required />
-                            <datalist id="authorOptions">
-                                @for (author of authors; track author.id) {
-                                <option [value]="author.name"></option>
-                                }
-                            </datalist>
-                        </div>
-                        @if (bookForm.get('author')?.hasError('required') && bookForm.get('author')?.touched) {
-                        <div class="text-danger">
-                            Author is required
-                        </div>
-                        }
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text" id="publisher">Publisher</span>
-                            <input type="text" class="form-control" id="publisher" formControlName="publisher" required>
-                        </div>
-                        @if (bookForm.get('publisher')?.hasError('required') && bookForm.get('publisher')?.touched) {
-                        <div class="text-danger">
-                            Publisher is required
-                        </div>
-                        }
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text" id="series">Series</span>
-                            <input class="form-control" list="seriesOptions" id="series" formControlName="series" />
-                            <datalist id="seriesOptions">
-                                @for (serie of series; track serie.id) {
-                                <option [value]="serie.name"></option>
-                                }
-                            </datalist>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text" id="start-date">Start Date</span>
-                            <input type="date" class="form-control" id="start-date" formControlName="startDate"
-                                [value]="bookForm.value.startDate | date:'yyyy-MM-dd'">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text" id="end-date">End Date</span>
-                            <input type="date" class="form-control" id="end-date" formControlName="endDate"
-                                [value]="bookForm.value.endDate | date:'yyyy-MM-dd'">
-                        </div>
-                        @if (endDateErrors?.dateRangeInvalid && bookForm.get('endDate')?.touched) {
-                        <div class="text-danger">
-                            End date must be after start date
-                        </div>
-                        }
-                        @if (endDateErrors?.startDateRequired && bookForm.get('endDate')?.touched) {
-                        <div class="text-danger">
-                            Start Date must be filled if End Date is filled
-                        </div>
-                        }
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text" id="format">Format</span>
-                            <select class="form-select" id="format" formControlName="format" required>
-                                @for (f of formats; track f.key) {
-                                <option [value]="f.key">{{ f.value }}</option>
-                                }
-                            </select>
-                        </div>
-                        @if (bookForm.get('format')?.hasError('required') && bookForm.get('format')?.touched) {
-                        <div class="text-danger">
-                            Format is required
-                        </div>
-                        }
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text" id="status">Status</span>
-                            <select class="form-select" id="status" formControlName="status" required>
-                                @for (s of statuses; track s.key) {
-                                <option [value]="s.key">{{ s.value }}</option>
-                                }
-                            </select>
-                        </div>
-                        @if (bookForm.get('status')?.hasError('required') && bookForm.get('status')?.touched) {
-                        <div class="text-danger">
-                            Status is required
-                        </div>
-                        }
-                    </div>
-                    <div class="col-md-4">
-                        <div class="input-group">
-                            <span class="input-group-text" id="pages">Pages</span>
-                            <input type="number" class="form-control" id="pages" formControlName="pages" required>
-                        </div>
-                        @if (bookForm.get('pages')?.hasError('required') && bookForm.get('pages')?.touched) {
-                        <div class="text-danger">
-                            Pages is required
-                        </div>
-                        }
-                        @if (bookForm.get('pages')?.hasError('pattern') && bookForm.get('pages')?.touched) {
-                        <div class="text-danger">
-                            Pages must be a integer
-                        </div>
-                        }
-                    </div>
-                    <div class="col-md-4">
-                        <div class="input-group">
-                            <span class="input-group-text" id="current-page">Current Page</span>
-                            <input type="number" class="form-control" id="current-page" formControlName="currentPage">
-                        </div>
-                        @if (currentPageErrors?.pagesRequired && bookForm.get('currentPage')?.touched) {
-                        <div class="text-danger">
-                            Pages must be filled if Current Page is filled
-                        </div>
-                        }
-                        @if (currentPageErrors?.pagesInvalid && bookForm.get('currentPage')?.touched) {
-                        <div class="text-danger">
-                            Current Page must be less than or equal to Pages
-                        </div>
-                        }
-                        @if (bookForm.get('currentPage')?.hasError('pattern') && bookForm.get('currentPage')?.touched) {
-                        <div class="text-danger">
-                            Current Page must be a integer
-                        </div>
-                        }
-                    </div>
-                    <div class="col-md-4">
-                        <div class="input-group">
-                            <span class="input-group-text" id="price">Price</span>
-                            <input type="text" class="form-control" id="price" formControlName="price">
-                        </div>
-                        @if (bookForm.get('price')?.hasError('pattern') && bookForm.get('price')?.touched) {
-                        <div class="text-danger">
-                            Price must be have only two decimal places
-                        </div>
-                        }
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text" id="genres">Genres</span>
-                            <select class="form-select" id="genres" formControlName="genre" multiple required>
-                                @for (g of genersList; track g.key) {
-                                <option [value]="g.key">{{ g.value }}</option>
-                                }
-                            </select>
-                        </div>
-                        @if (bookForm.get('genres')?.hasError('required') && bookForm.get('genres')?.touched) {
-                        <div class="text-danger">
-                            Genre is required
-                        </div>
-                        }
-                    </div>
-                    <div class="col-12">
-                        <div class="input-group">
-                            <span class="input-group-text" id="description">Description</span>
-                            <textarea class="form-control" rows="3" id="description"
-                                formControlName="description"></textarea>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="input-group">
-                            <span class="input-group-text" id="review">Review</span>
-                            <textarea class="form-control" rows="3" d="review" formControlName="review"></textarea>
-                        </div>
-                    </div>
-                    <div class="col-12 text-center">
-                        <button type="submit" class="btn btn-success" [disabled]="bookForm.invalid">Save</button>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-            </div>
-        </div>
-    </div>
-</div>
 
 <app-footer-global></app-footer-global>
