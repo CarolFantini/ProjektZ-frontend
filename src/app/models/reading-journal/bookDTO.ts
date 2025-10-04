@@ -1,15 +1,15 @@
 import { Formats } from "../../enums/formats";
 import { Genres } from "../../enums/genres";
 import { Status } from "../../enums/status";
-import { Author } from "./author";
+import { AuthorDTO } from "./authorDTO";
 import { Series } from "./series";
 
-export class Book {
-  id!: string;
+export class BookDTO {
+  id!: number;
   name!: string;
-  author!: Author;
+  authors!: AuthorDTO[];
   publisher!: string;
-  genre!: Genres[];
+  genres!: Genres[];
   format!: Formats;
   pages!: number;
   currentPage?: number;
@@ -21,12 +21,8 @@ export class Book {
   description?: string;
   review?: string;
 
-  constructor(init?: Partial<Book>) {
-    Object.assign(this, init);
-  }
-
   get progressPercentage(): number {
-    if (this.pages && this.pages > 0 && this.currentPage) {
+    if (this.pages > 0 && this.currentPage) {
       return Math.round((this.currentPage / this.pages) * 10000) / 100; // 2 casas decimais
     }
     return 0;
