@@ -2,8 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Book } from '../models/reading-journal/book';
-import { Author } from '../models/reading-journal/author';
+import { BookDTO } from '../models/reading-journal/bookDTO';
+import { AuthorDTO } from '../models/reading-journal/authorDTO';
 import { Series } from '../models/reading-journal/series';
 
 @Injectable({
@@ -13,34 +13,42 @@ export class ReadingJournalService {
   private readonly apiUrl = environment.apiUrl + '/ReadingJournal';
   private http = inject(HttpClient);
 
-  getAllBooks(): Observable<Book[]> {
-    return this.http.get<Book[]>(`${this.apiUrl}/books/getall`);
+  getAllBooks(): Observable<BookDTO[]> {
+    return this.http.get<BookDTO[]>(`${this.apiUrl}/books/getall`);
   }
 
-  editBook(book: Book): Observable<boolean> {
+  getAllAuthors(): Observable<AuthorDTO[]> {
+    return this.http.get<AuthorDTO[]>(`${this.apiUrl}/authors/getall`);
+  }
+
+  getAllSeries(): Observable<Series[]> {
+    return this.http.get<Series[]>(`${this.apiUrl}/series/getall`);
+  }
+
+  editBook(book: BookDTO): Observable<boolean> {
     return this.http.patch<boolean>(`${this.apiUrl}/book/edit`, book);
   }
 
-  createBook(book: Book): Observable<boolean> {
+  createBook(book: BookDTO): Observable<boolean> {
     return this.http.post<boolean>(`${this.apiUrl}/book/create`, book);
   }
 
-  deleteBook(id: string): Observable<boolean> {
-    return this.http.delete<boolean>(`${this.apiUrl}/book/delete/${id}`);
+  deleteBook(id: number): Observable<boolean> {
+    return this.http.delete<boolean>(`${this.apiUrl}/book/${id}`);
   }
 
-  createAuthor(authorName: string): Observable<Author> {
-    return this.http.post<Author>(
+  createAuthors(name: string): Observable<AuthorDTO> {
+    return this.http.post<AuthorDTO>(
       `${this.apiUrl}/author/create`,
-      `"${authorName}"`,
+      { name },
       { headers: { 'Content-Type': 'application/json' } }
     );
   }
 
-  createSeries(seriesName: string): Observable<Series> {
+  createSeries(name: string): Observable<Series> {
     return this.http.post<Series>(
       `${this.apiUrl}/series/create`,
-      `"${seriesName}"`,
+      name,
       { headers: { 'Content-Type': 'application/json' } }
     );
   }

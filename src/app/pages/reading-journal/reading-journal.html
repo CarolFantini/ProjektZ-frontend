@@ -47,7 +47,7 @@
             <div class="card text-center shadow-sm bg-dark text-white">
                 <div class="card-body">
                     <h6 class="card-title">Average Time to Finish a Book</h6>
-                    <h3 class="text-primary">{{ (totalDaysSpent / totalBooks).toPrecision(1) }} Days</h3>
+                    <h3 class="text-primary">{{ averageTime }} Days</h3>
                 </div>
             </div>
         </div>
@@ -63,7 +63,9 @@
 
         <p-toolbar class="mb-6">
             <ng-template #start>
-                <p-button label="New" icon="pi pi-plus" class="mr-2" (onClick)="openCreateDialog();" />
+                <p-button label="New Book" icon="pi pi-book" class="me-2" (onClick)="openCreateDialog();" />
+                <p-button label="New Author" icon="pi pi-user" class="me-2" disabled />
+                <p-button label="New Series" icon="pi pi-plus" disabled />
             </ng-template>
 
             <ng-template #end>
@@ -103,9 +105,13 @@
             <ng-template #body let-book>
                 <tr>
                     <td pFrozenColumn>{{ book.name }}</td>
-                    <td>{{ book.author?.name }}</td>
+                    <td>
+                        @for (author of book.authors; track author.id) {
+                        {{ author.name }}
+                        }
+                    </td>
                     <td>{{ book.publisher }}</td>
-                    <td>{{ enumToString(book.genre, Genres) }}</td>
+                    <td>{{ enumToString(book.genres, Genres) }}</td>
                     <td>{{ enumToString(book.format, Formats) }}</td>
                     <td>{{ book.pages }}</td>
                     <td>{{ book.currentPage }}</td>
@@ -130,7 +136,7 @@
                         {{ book.progressPercentage }}%
                     </td>
                     <td class="column">
-                        <p-button title="Click to edit the book" icon="pi pi-pencil" severity="help" class="me-2"
+                        <p-button title="Click to edit the book" icon="pi pi-pencil" severity="warn" class="me-2"
                             [outlined]="true" [rounded]="true" (click)="openEditDialog(book);" />
                         <p-button title="Click to delete the book" icon="pi pi-trash" severity="danger" class="me-2"
                             [outlined]="true" [rounded]="true" (click)="deleteBook(book.id);" />
@@ -172,18 +178,13 @@
         <div class="col-md-6">
             <p-inputgroup>
                 <p-inputgroup-addon>
-                    <span id="author">Author</span>
+                    <span id="authors">Author</span>
                 </p-inputgroup-addon>
-                <p-autoComplete formControlName="author" [suggestions]="filteredAuthors"
-                    (completeMethod)="filterAuthors($event)" field="name" required>
-                    <ng-template let-author pTemplate="item">
-                        <div>{{ author.name }}</div>
-                    </ng-template>
-                </p-autoComplete>
+                <p-multiselect [options]="authors" formControlName="authors" optionLabel="name" required />
             </p-inputgroup>
-            @if (bookForm.get('author')?.hasError('required') && bookForm.get('author')?.touched) {
+            @if (bookForm.get('authors')?.hasError('required') && bookForm.get('authors')?.touched) {
             <div class="text-danger">
-                Author is required
+                Authors is required
             </div>
             }
         </div>
@@ -205,12 +206,7 @@
                 <p-inputgroup-addon>
                     <span id="series">Series</span>
                 </p-inputgroup-addon>
-                <p-autoComplete formControlName="series" [suggestions]="filteredSeries"
-                    (completeMethod)="filterSeries($event)" field="name">
-                    <ng-template let-series pTemplate="item">
-                        <div>{{ series.name }}</div>
-                    </ng-template>
-                </p-autoComplete>
+                <p-select id="series" formControlName="series" [options]="series" optionLabel="name" />
             </p-inputgroup>
         </div>
         <div class="col-md-6">
@@ -218,12 +214,12 @@
                 <p-inputgroup-addon>
                     <span id="genres">Genres</span>
                 </p-inputgroup-addon>
-                <p-multiselect [options]="genersList" formControlName="genre" optionLabel="value" optionValue="key"
+                <p-multiselect [options]="genersList" formControlName="genres" optionLabel="value" optionValue="key"
                     required />
             </p-inputgroup>
-            @if (bookForm.get('genre')?.hasError('required') && bookForm.get('genre')?.touched) {
+            @if (bookForm.get('genres')?.hasError('required') && bookForm.get('genres')?.touched) {
             <div class="text-danger">
-                Genre is required
+                Genres is required
             </div>
             }
         </div>

@@ -2,13 +2,13 @@ import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { FooterGlobal } from '../../common/footer-global/footer-global';
 import { MenuGlobal } from '../../common/menu-global/menu-global';
 import { ReadingJournalService } from '../../services/reading-journal-service';
-import { Book } from '../../models/reading-journal/book';
-import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { BookDTO } from '../../models/reading-journal/bookDTO';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Genres } from '../../enums/genres';
 import { Status } from '../../enums/status';
 import { Formats } from '../../enums/formats';
-import { Author } from '../../models/reading-journal/author';
+import { AuthorDTO } from '../../models/reading-journal/authorDTO';
 import { Series } from '../../models/reading-journal/series';
 import { ChartsService } from '../../services/charts-service';
 
@@ -26,12 +26,10 @@ import { InputGroup } from 'primeng/inputgroup';
 import { InputGroupAddon } from 'primeng/inputgroupaddon';
 import { MultiSelect } from 'primeng/multiselect';
 import { DatePicker } from 'primeng/datepicker';
-import { AutoComplete } from 'primeng/autocomplete';
 import { Select } from 'primeng/select';
 import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
-import { forkJoin, of, switchMap } from 'rxjs';
 
 interface Column {
   field: string;
@@ -42,7 +40,7 @@ interface Column {
   selector: 'app-reading-journal',
   imports: [MenuGlobal, FooterGlobal, ReactiveFormsModule, DatePipe, CurrencyPipe,
     TableModule, IconFieldModule, InputIconModule, DialogModule, ButtonModule, ToolbarModule,
-    Tag, ToastModule, InputGroup, InputGroupAddon, MultiSelect, DatePicker, AutoComplete, Select,
+    Tag, ToastModule, InputGroup, InputGroupAddon, MultiSelect, DatePicker, Select,
     InputNumber, InputText, Textarea],
   templateUrl: './reading-journal.html',
   styleUrl: './reading-journal.scss'
@@ -58,20 +56,22 @@ export class ReadingJournal {
 
   titulo: string = 'Reading Journal';
   modalTitle: string = '';
-  selectedBook?: Book;
+  selectedBook?: BookDTO;
   isEditMode: boolean = false;
   totalPages: number = 0;
   totalPrice: number = 0;
   totalDaysSpent: number = 0;
   totalBooks: number = 0;
+  averageTime: string = '';
   tableDialogVisible: boolean = false;
   dialogVisible: boolean = false;
   buttonSeverity: ButtonSeverity = 'success';
+  // precisa para order by
   cols: Column[] = [
     { header: 'Name', field: 'name' },
-    { header: 'Author', field: 'author.name' },
+    { header: 'Authors', field: 'authors' },
     { header: 'Publisher', field: 'publisher' },
-    { header: 'Genre', field: 'genre' },
+    { header: 'Genres', field: 'genres' },
     { header: 'Format', field: 'format' },
     { header: 'Pages', field: 'pages' },
     { header: 'Current Page', field: 'currentPage' },
@@ -83,244 +83,25 @@ export class ReadingJournal {
     { header: 'Days Spend', field: 'daysSpentReading' },
     { header: 'Progress', field: 'progressPercentage' }
   ];
-  filteredAuthors: Author[] = [];
-  filteredSeries: Series[] = [];
-
+  // ---
+  // precisa para o search
   filterFields: string[] = this.cols.map(col => col.field);
-
-  Genres = Genres;   // <--- assim você consegue usar no template
-  Status = Status;
-  Formats = Formats;
-
-  // >>>>>>>>>>>>>>>>>>>>>>>>>> MOCKADO, DEPOIS BUSCAR NO BACKEND <<<<<<<<<<<<<<<<<<<<<<<<<<
-  authors: Author[] = [
-    { id: 1, name: 'Andrew Hunt' },
-    { id: 2, name: 'Robert C. Martin' },
-    { id: 3, name: 'J.K. Rowling' }
-  ];
-
-  series: Series[] = [
-    { id: 1, name: 'Programming Mastery' },
-    { id: 2, name: 'Clean Code Series' },
-    { id: 3, name: 'Harry Potter' }
-  ];
+  // ---
+  authors: AuthorDTO[] = [];
+  series: Series[] = [];
+  books: BookDTO[] = [];
 
   formats: { key: number; value: string }[] = [];
   statuses: { key: number; value: string }[] = [];
   genersList: { key: number; value: string }[] = [];
-
-  books: Book[] = [
-    new Book({
-      id: "1",
-      name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt' } as Author,
-      pages: 352,
-      currentPage: 100,
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(2025, 8, 24),
-      genre: [Genres.Technology],
-      publisher: 'Addison-Wesley',
-      format: Formats.eBook,
-      description: 'A book about pragmatic approaches to software development.',
-      review: 'Excelente leitura para devs.',
-      status: Status.InProgress,
-      price: 199.90,
-      series: { id: 1, name: 'Programming Mastery' } as Series
-    }),
-    new Book({
-      id: "2",
-      name: 'Clean Code',
-      author: { id: 2, name: 'Robert C. Martin' } as Author,
-      pages: 464,
-      currentPage: 200,
-      startDate: new Date(2025, 7, 15),
-      endDate: new Date(2025, 7, 30),
-      genre: [Genres.Technology, Genres.NonFiction],
-      publisher: 'Prentice Hall',
-      format: Formats.ComicBook,
-      description: 'Guidelines for writing clean and maintainable code.',
-      review: 'Indispensável para qualquer programador.',
-      status: Status.Finished,
-      price: 249.50,
-      series: { id: 2, name: 'Clean Code Series' } as Series
-    }),
-    new Book({
-      id: "3",
-      name: 'Harry Potter and the Philosopher\'s Stone',
-      author: { id: 3, name: 'J.K. Rowling' } as Author,
-      pages: 223,
-      currentPage: 223,
-      startDate: new Date(2025, 0, 5),
-      endDate: new Date(2025, 0, 15),
-      genre: [Genres.Fantasy],
-      publisher: 'Bloomsbury',
-      format: Formats.Other,
-      description: 'The first book in the Harry Potter series.',
-      review: 'Clássico da fantasia moderna.',
-      status: Status.Finished,
-      price: 99.90,
-      series: { id: 3, name: 'Harry Potter' } as Series
-    }),
-    new Book({
-      id: "4",
-      name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt' } as Author,
-      pages: 352,
-      currentPage: 100,
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(2025, 8, 24),
-      genre: [Genres.Technology],
-      publisher: 'Addison-Wesley',
-      format: Formats.Hardcover,
-      description: 'A book about pragmatic approaches to software development.',
-      review: 'Excelente leitura para devs.',
-      status: Status.InProgress,
-      price: 199.90,
-      series: { id: 1, name: 'Programming Mastery' } as Series
-    }),
-    new Book({
-      id: "5",
-      name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt' } as Author,
-      pages: 352,
-      currentPage: 100,
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(2025, 8, 24),
-      genre: [Genres.Technology],
-      publisher: 'Addison-Wesley',
-      format: Formats.Paperback,
-      description: 'A book about pragmatic approaches to software development.',
-      review: 'Excelente leitura para devs.',
-      status: Status.InProgress,
-      price: 199.90,
-      series: { id: 1, name: 'Programming Mastery' } as Series
-    }),
-    new Book({
-      id: "6",
-      name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt' } as Author,
-      pages: 352,
-      currentPage: 100,
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(2025, 8, 24),
-      genre: [Genres.Technology],
-      publisher: 'Addison-Wesley',
-      format: Formats.Hardcover,
-      description: 'A book about pragmatic approaches to software development.',
-      review: 'Excelente leitura para devs.',
-      status: Status.InProgress,
-      price: 199.90,
-      series: { id: 1, name: 'Programming Mastery' } as Series
-    }),
-    new Book({
-      id: "7",
-      name: 'sss',
-      author: { id: 1, name: 'Andrew Hunt' } as Author,
-      pages: 352,
-      currentPage: 100,
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(),
-      genre: [Genres.Technology],
-      publisher: 'Addison-Wesley',
-      format: Formats.Hardcover,
-      description: 'A book about pragmatic approaches to software development.',
-      review: 'Excelente leitura para devs.',
-      status: Status.ToRead,
-      price: 199.90,
-      series: { id: 1, name: 'Programming Mastery' } as Series
-    }),
-    new Book({
-      id: "8",
-      name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt' } as Author,
-      pages: 352,
-      currentPage: 100,
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(2025, 8, 24),
-      genre: [Genres.Technology],
-      publisher: 'Addison-Wesley',
-      format: Formats.Hardcover,
-      description: 'A book about pragmatic approaches to software development.',
-      review: 'Excelente leitura para devs.',
-      status: Status.ToRead,
-      price: 199.90,
-      series: { id: 1, name: 'Programming Mastery' } as Series
-    }),
-    new Book({
-      id: "9",
-      name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt' } as Author,
-      pages: 352,
-      currentPage: 100,
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(2025, 8, 24),
-      genre: [Genres.Technology],
-      publisher: 'Addison-Wesley',
-      format: Formats.Hardcover,
-      description: 'A book about pragmatic approaches to software development.',
-      review: 'Excelente leitura para devs.',
-      status: Status.Paused,
-      price: 199.90,
-      series: { id: 1, name: 'Programming Mastery' } as Series
-    }),
-    new Book({
-      id: "10",
-      name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt' } as Author,
-      pages: 352,
-      currentPage: 100,
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(2025, 8, 24),
-      genre: [Genres.Technology],
-      publisher: 'Addison-Wesley',
-      format: Formats.Hardcover,
-      description: 'A book about pragmatic approaches to software development.',
-      review: 'Excelente leitura para devs.',
-      status: Status.InProgress,
-      price: 199.90,
-      series: { id: 1, name: 'Programming Mastery' } as Series
-    }),
-    new Book({
-      id: "11",
-      name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt' } as Author,
-      pages: 352,
-      currentPage: 100,
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(2025, 8, 24),
-      genre: [Genres.Technology],
-      publisher: 'Addison-Wesley',
-      format: Formats.Hardcover,
-      description: 'A book about pragmatic approaches to software development.',
-      review: 'Excelente leitura para devs.',
-      status: Status.InProgress,
-      price: 199.90,
-      series: { id: 1, name: 'Programming Mastery' } as Series
-    }),
-    new Book({
-      id: "12",
-      name: 'The Pragmatic Programmer',
-      author: { id: 1, name: 'Andrew Hunt' } as Author,
-      pages: 352,
-      currentPage: 100,
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(2025, 8, 24),
-      genre: [Genres.Technology],
-      publisher: 'Addison-Wesley',
-      format: Formats.Hardcover,
-      description: 'A book about pragmatic approaches to software development.',
-      review: 'Excelente leitura para devs.',
-      status: Status.InProgress,
-      price: 199.90,
-      series: { id: 1, name: 'Programming Mastery' } as Series
-    })
-  ];
-
-  // >>>>>>>>>>>>>>>>>>>>>>>>>> FIM DO MOCK <<<<<<<<<<<<<<<<<<<<<<<<<<
+  // NECESSÁRIO
+  Genres = Genres;
+  Status = Status;
+  Formats = Formats;
 
   bookForm: FormGroup = this.fb.group({
     name: ['', Validators.required],
-    author: ['', Validators.required],
+    authors: [[], Validators.required],
     publisher: ['', Validators.required],
     price: [null],
     pages: [null, [
@@ -330,7 +111,7 @@ export class ReadingJournal {
     currentPage: [null],
     startDate: [null],
     endDate: [null],
-    genre: [[], Validators.required],
+    genres: [[], Validators.required],
     series: [null],
     format: [null, Validators.required],
     status: [null, Validators.required],
@@ -379,7 +160,8 @@ export class ReadingJournal {
 
   ngOnInit(): void {
     this.getAllBooks();
-    this.updateCounters();
+    this.getAllAuthors();
+    this.getAllSeries();
 
     this.formats = Object.keys(Formats)
       .filter(key => isNaN(Number(key)))
@@ -394,7 +176,7 @@ export class ReadingJournal {
       .map(key => ({ key: Genres[key as keyof typeof Genres], value: key }));
   }
 
-  ngAfterViewInit() {
+  renderCharts() {
     const countsFormat: { [key: string]: number } = {};
     const countsGenres: { [key: string]: number } = {};
 
@@ -404,20 +186,20 @@ export class ReadingJournal {
     }
 
     for (const book of this.books) {
-      if (book.genre && Array.isArray(book.genre)) {
-        for (const genre of book.genre) {
+      if (book.genres && Array.isArray(book.genres)) {
+        for (const genre of book.genres) {
           const genreName = Genres[genre];
           countsGenres[genreName] = (countsGenres[genreName] || 0) + 1;
         }
       }
     }
 
-    const labelsFormart = Object.keys(countsFormat);
-    const seriesFormart = Object.values(countsFormat);
+    const labelsFormat = Object.keys(countsFormat);
+    const seriesFormat = Object.values(countsFormat);
     const labelsGenres = Object.keys(countsGenres);
     const seriesGenres = Object.values(countsGenres);
 
-    this.chartsService.renderDonutChart(this.formatChart.nativeElement, 'Formats', labelsFormart, seriesFormart);
+    this.chartsService.renderDonutChart(this.formatChart.nativeElement, 'Formats', labelsFormat, seriesFormat);
     this.chartsService.renderDonutChart(this.genresChart.nativeElement, 'Genres', labelsGenres, seriesGenres);
   }
 
@@ -445,9 +227,12 @@ export class ReadingJournal {
     this.buttonSeverity = 'success';
     this.isEditMode = false;
     this.dialogVisible = true;
+    this.bookForm.reset();
+    this.enableAllFields();
   }
 
-  openEditDialog(book: Book) {
+  openEditDialog(book: BookDTO) {
+    this.bookForm.reset();
     this.selectedBook = book;
     this.modalTitle = 'Edit a Book - ' + book.name;
     this.buttonSeverity = 'warn';
@@ -456,15 +241,15 @@ export class ReadingJournal {
 
     this.bookForm.patchValue({
       name: book.name || '',
-      author: book.author?.name || '',
+      authors: book.authors,
       publisher: book.publisher || '',
       price: book.price ?? null,
       pages: book.pages ?? null,
       currentPage: book.currentPage ?? null,
       startDate: book.startDate ? new Date(book.startDate) : null,
       endDate: book.endDate ? new Date(book.endDate) : null,
-      genre: book.genre || [],
-      series: book.series?.name || '',
+      genres: book.genres || [],
+      series: book.series,
       format: book.format,
       status: book.status,
       description: book.description || '',
@@ -478,19 +263,18 @@ export class ReadingJournal {
     }
 
     this.bookForm.get('name')?.disable();
-    this.bookForm.get('author')?.disable();
+    this.bookForm.get('authors')?.disable();
     this.bookForm.get('publisher')?.disable();
     this.bookForm.get('format')?.disable();
     this.bookForm.get('pages')?.disable();
   }
 
-  deleteBook(id: string) {
+  deleteBook(id: number) {
     this.readingJournalService.deleteBook(id).subscribe({
       next: (success) => {
         if (success) {
-          this.messageService.add({ severity: 'success', summary: 'Delete', detail: 'Livro deletado com sucesso!' });
+          this.messageService.add({ severity: 'success', summary: 'Delete', detail: 'Book deleted successfully!' });
           this.getAllBooks();
-          this.updateCounters();
         }
       },
       error: (err) => {
@@ -503,6 +287,30 @@ export class ReadingJournal {
     this.readingJournalService.getAllBooks().subscribe({
       next: (data) => {
         this.books = data;
+        this.updateCounters();
+        this.renderCharts();
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
+  }
+
+  getAllAuthors(): void {
+    this.readingJournalService.getAllAuthors().subscribe({
+      next: (data) => {
+        this.authors = data;
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
+  }
+
+  getAllSeries(): void {
+    this.readingJournalService.getAllSeries().subscribe({
+      next: (data) => {
+        this.series = data;
       },
       error: (err) => {
         console.error(err);
@@ -520,6 +328,8 @@ export class ReadingJournal {
     this.animateCounter("totalPrice", newPrice, 500);
     this.animateCounter("totalDaysSpent", newDays, 500);
     this.animateCounter("totalBooks", newBooks, 500);
+
+    this.averageTime = (newDays / newBooks).toFixed();
   }
 
   private animateCounter(
@@ -542,6 +352,12 @@ export class ReadingJournal {
     }, 30);
   }
 
+  enableAllFields() {
+    Object.keys(this.bookForm.controls).forEach(key => {
+      this.bookForm.get(key)?.enable();
+    });
+  }
+
   exportCSV() {
     this.dt.exportFilename = 'list_books';
     this.dt.exportCSV();
@@ -557,95 +373,59 @@ export class ReadingJournal {
     return enumType[value];
   }
 
-  filterAuthors(event: any) {
-    const query = event.query.toLowerCase();
-    this.filteredAuthors = this.authors.filter(a =>
-      a.name?.toLowerCase().includes(query)
-    );
-  }
-
-  filterSeries(event: any) {
-    const query = event.query.toLowerCase();
-    this.filteredSeries = this.series.filter(a =>
-      a.name?.toLowerCase().includes(query)
-    );
-  }
-
-  finishBook(book: Book) {
-    // TODO
+  finishBook(book: BookDTO) {
     this.selectedBook = book;
+
+    this.selectedBook.currentPage = this.selectedBook.pages;
+    this.selectedBook.status = Status.Finished;
+    this.selectedBook.endDate = new Date();
+
+    this.readingJournalService.editBook(this.selectedBook).subscribe({
+      next: (success) => {
+        if (success) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Finished',
+            detail: 'Book has been finished!'
+          });
+          this.getAllBooks();
+          this.bookForm.reset();
+        }
+      },
+      error: (err) => console.error(err)
+    });
   }
 
-  onSubmit() {
-    // REVISAR
+  onSubmit(): void {
     if (!this.bookForm.valid) {
       this.bookForm.markAllAsTouched();
       return;
     }
 
-    let formValue = { ...this.bookForm.value };
+    // Pega todos os campos, incluindo os desabilitados
+    const bookData = this.bookForm.getRawValue();
 
-    // observável para criar o autor se for string, senão devolve o próprio objeto
-    const author$ =
-      typeof formValue.author === 'string'
-        ? this.readingJournalService.createAuthor(formValue.author)
-        : of(formValue.author);
+    const request$ = this.isEditMode
+      ? this.readingJournalService.editBook({ ...this.selectedBook, ...bookData })
+      : this.readingJournalService.createBook(bookData);
 
-    // observável para criar a série se for string, senão devolve o próprio objeto
-    const series$ =
-      typeof formValue.series === 'string'
-        ? this.readingJournalService.createSeries(formValue.series)
-        : of(formValue.series);
-
-    if (this.isEditMode) {
-      forkJoin([author$, series$])
-        .pipe(
-          switchMap(([author, series]) => {
-            formValue = { ...formValue, author, series };
-            return this.readingJournalService.editBook(formValue);
-          })
-        ).subscribe({
-          next: (success) => {
-            if (success) {
-              this.messageService.add({
-                severity: 'success',
-                summary: 'Edit',
-                detail: 'Livro editado com sucesso!'
-              });
-              this.getAllBooks();
-              this.updateCounters()
-              this.bookForm.reset();
-            }
-          },
-          error: (err) => {
-            console.error(err);
-          }
-        })
-    } else {
-      forkJoin([author$, series$])
-        .pipe(
-          switchMap(([author, series]) => {
-            formValue = { ...formValue, author, series };
-            return this.readingJournalService.createBook(formValue);
-          })
-        )
-        .subscribe({
-          next: (success) => {
-            if (success) {
-              this.messageService.add({
-                severity: 'success',
-                summary: 'Create',
-                detail: 'Livro criado com sucesso!'
-              });
-              this.getAllBooks();
-              this.updateCounters();
-            }
-          },
-          error: (err) => {
-            console.error(err);
-          }
-        });
-    }
-    this.dialogVisible = false;
+    request$.subscribe({
+      next: (success) => {
+        if (success) {
+          this.messageService.add({
+            severity: 'success',
+            summary: this.isEditMode ? 'Edit' : 'Create',
+            detail: this.isEditMode
+              ? 'Book successfully edited!'
+              : 'Book created successfully!'
+          });
+          this.getAllBooks();
+          this.bookForm.reset();
+          this.dialogVisible = false;
+          this.isEditMode = false;
+        }
+      },
+      error: (err) => console.error(err)
+    });
   }
 }
