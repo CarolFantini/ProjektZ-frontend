@@ -69,12 +69,13 @@
             </ng-template>
 
             <ng-template #end>
-                <p-button label="Export" icon="pi pi-upload" severity="secondary" (onClick)="exportCSV();" />
+                <p-button label="Export" icon="pi pi-upload" severity="secondary" (onClick)="exportCSV();" disabled />
             </ng-template>
         </p-toolbar>
 
         <p-table #dt stripedRows [scrollable]="true" [rowHover]="true" dataKey="id" [value]="books"
-            [globalFilterFields]="filterFields" scrollHeight="60vh" [columns]="cols">
+            [globalFilterFields]="filterFields" scrollHeight="60vh" [columns]="cols" (sortFunction)="customSort($event)"
+            [customSort]="true">
             <ng-template #caption>
                 <div class="row">
                     <div class="col-md-6">
@@ -82,7 +83,7 @@
                     </div>
                     <div class="col-md-6 text-end">
                         <p-iconfield>
-                            <input pInputText type="text" (input)="dt.filterGlobal($event.target.value, 'contains')"
+                            <input pInputText type="text" (input)="dt.filterGlobal($event.target.value, 'customContains')"
                                 placeholder="Search..." />
                             <p-inputicon class="pi pi-search" />
                         </p-iconfield>

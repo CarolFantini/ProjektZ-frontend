@@ -21,7 +21,7 @@ import { ButtonModule, ButtonSeverity } from 'primeng/button';
 import { ToolbarModule } from 'primeng/toolbar';
 import { Tag } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import { FilterService, MessageService } from 'primeng/api';
 import { InputGroup } from 'primeng/inputgroup';
 import { InputGroupAddon } from 'primeng/inputgroupaddon';
 import { MultiSelect } from 'primeng/multiselect';
@@ -53,6 +53,7 @@ export class ReadingJournal {
   private chartsService = inject(ChartsService);
   private messageService = inject(MessageService);
   private fb = inject(FormBuilder);
+  private filterService = inject(FilterService);
 
   titulo: string = 'Reading Journal';
   modalTitle: string = '';
@@ -66,7 +67,7 @@ export class ReadingJournal {
   tableDialogVisible: boolean = false;
   dialogVisible: boolean = false;
   buttonSeverity: ButtonSeverity = 'success';
-  // precisa para order by
+  // precisa para order by e export
   cols: Column[] = [
     { header: 'Name', field: 'name' },
     { header: 'Authors', field: 'authors' },
@@ -79,7 +80,7 @@ export class ReadingJournal {
     { header: 'End Date', field: 'endDate' },
     { header: 'Status', field: 'status' },
     { header: 'Price', field: 'price' },
-    { header: 'Series', field: 'series.name' },
+    { header: 'Series', field: 'series' },
     { header: 'Days Spend', field: 'daysSpentReading' },
     { header: 'Progress', field: 'progressPercentage' }
   ];
@@ -162,7 +163,7 @@ export class ReadingJournal {
     this.getAllBooks();
     this.getAllAuthors();
     this.getAllSeries();
-
+    // -----------------------
     this.formats = Object.keys(Formats)
       .filter(key => isNaN(Number(key)))
       .map(key => ({ key: Formats[key as keyof typeof Formats], value: key }));
@@ -174,6 +175,36 @@ export class ReadingJournal {
     this.genersList = Object.keys(Genres)
       .filter(key => isNaN(Number(key)))
       .map(key => ({ key: Genres[key as keyof typeof Genres], value: key }));
+    // -----------------------
+    this.filterService.register('customContains', (value: any, filter: string): boolean => {
+      if (!filter) return true;
+      if (value == null) return false;
+
+      const normalizedFilter = filter.toLowerCase();
+
+      // Caso seja string ou número simples
+      if (typeof value === 'string' || typeof value === 'number') {
+        return value.toString().toLowerCase().includes(normalizedFilter);
+      }
+
+      // Caso seja array de objetos (ex.: authors)
+      if (Array.isArray(value)) {
+        return value.some(item =>
+          Object.values(item).some(v =>
+            v?.toString().toLowerCase().includes(normalizedFilter)
+          )
+        );
+      }
+
+      // Caso seja objeto simples, como (ex.: series)
+      if (typeof value === 'object') {
+        return Object.values(value).some(v =>
+          v?.toString().toLowerCase().includes(normalizedFilter)
+        );
+      }
+
+      return false;
+    });
   }
 
   renderCharts() {
@@ -426,6 +457,38 @@ export class ReadingJournal {
         }
       },
       error: (err) => console.error(err)
+    });
+  }
+
+  customSort(event: { data: any[]; field: string; order: number }): void {
+    const { data, field, order } = event;
+
+    data.sort((a, b) => {
+      let valueA = a[field];
+      let valueB = b[field];
+
+      // Caso especial: authors (array de objetos com 'name')
+      if (field.toLowerCase() === 'authors') {
+        valueA = Array.isArray(valueA) ? valueA.map((x: any) => x.name).join(', ') : '';
+        valueB = Array.isArray(valueB) ? valueB.map((x: any) => x.name).join(', ') : '';
+      }
+
+      // Caso especial: series (objeto com propriedade name)
+      if (field.toLowerCase() === 'series') {
+        valueA = valueA?.name ?? '';
+        valueB = valueB?.name ?? '';
+      }
+
+      // Normaliza strings
+      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
+      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+
+      if (valueA == null && valueB != null) return -1 * order;
+      if (valueA != null && valueB == null) return 1 * order;
+      if (valueA == null && valueB == null) return 0;
+      if (valueA < valueB) return -1 * order;
+      if (valueA > valueB) return 1 * order;
+      return 0;
     });
   }
 }
