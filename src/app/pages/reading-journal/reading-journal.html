@@ -64,8 +64,6 @@
         <p-toolbar class="mb-6">
             <ng-template #start>
                 <p-button label="New Book" icon="pi pi-book" class="me-2" (onClick)="openCreateDialog();" />
-                <p-button label="New Author" icon="pi pi-user" class="me-2" disabled />
-                <p-button label="New Series" icon="pi pi-plus" disabled />
             </ng-template>
 
             <ng-template #end>
@@ -83,7 +81,8 @@
                     </div>
                     <div class="col-md-6 text-end">
                         <p-iconfield>
-                            <input pInputText type="text" (input)="dt.filterGlobal($event.target.value, 'customContains')"
+                            <input pInputText type="text"
+                                (input)="dt.filterGlobal($event.target.value, 'customContains')"
                                 placeholder="Search..." />
                             <p-inputicon class="pi pi-search" />
                         </p-iconfield>
