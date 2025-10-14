@@ -305,7 +305,7 @@ export class ReadingJournal {
       next: (success) => {
         if (success) {
           this.messageService.add({ severity: 'success', summary: 'Delete', detail: 'Book deleted successfully!' });
-          this.getAllBooks();
+          this.updateAll();
         }
       },
       error: (err) => {
@@ -367,7 +367,7 @@ export class ReadingJournal {
     prop: "totalPages" | "totalPrice" | "totalDaysSpent" | "totalBooks",
     target: number,
     duration: number
-  ) {
+  ): void {
     let start = this[prop];
     const step = Math.ceil((target - start) / (duration / 20)); // passo baseado em 20fps
 
@@ -383,13 +383,13 @@ export class ReadingJournal {
     }, 30);
   }
 
-  enableAllFields() {
+  enableAllFields(): void {
     Object.keys(this.bookForm.controls).forEach(key => {
       this.bookForm.get(key)?.enable();
     });
   }
 
-  exportCSV() {
+  exportCSV(): void {
     this.dt.exportFilename = 'list_books';
     this.dt.exportCSV();
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Lista de livros exportada com sucesso!' });
@@ -404,7 +404,13 @@ export class ReadingJournal {
     return enumType[value];
   }
 
-  finishBook(book: BookDTO) {
+  updateAll(): void {
+    this.getAllBooks();
+    this.updateCounters();
+    this.renderCharts();
+  }
+
+  finishBook(book: BookDTO): void {
     this.selectedBook = book;
 
     this.selectedBook.currentPage = this.selectedBook.pages;
@@ -419,7 +425,7 @@ export class ReadingJournal {
             summary: 'Finished',
             detail: 'Book has been finished!'
           });
-          this.getAllBooks();
+          this.updateAll();
           this.bookForm.reset();
         }
       },
@@ -450,7 +456,7 @@ export class ReadingJournal {
               ? 'Book successfully edited!'
               : 'Book created successfully!'
           });
-          this.getAllBooks();
+          this.updateAll();
           this.bookForm.reset();
           this.dialogVisible = false;
           this.isEditMode = false;
