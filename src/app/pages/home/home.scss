@@ -1,0 +1,31 @@
+.main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(150deg, rgba(0, 0, 0, 1) 0%, rgba(26, 16, 49, 1) 40%, rgba(60, 41, 109, 1) 70%, rgba(206, 116, 56, 1) 100%);
+}
+
+.wrapper {
+  text-align: center;
+}
+
+h1 {
+  color: white;
+  font-weight: bold;
+  font-size: 10vh;
+  letter-spacing: 1vw;
+  text-shadow: 0 0 3px white;
+  border-right: 2px solid white;
+  animation: blink 0.8s infinite;
+}
+
+p {
+  color: white;
+}
+
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}

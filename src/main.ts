@@ -10,9 +10,10 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 import { MessageService } from 'primeng/api';
+import { Home } from './app/pages/home/home';
 
 const routes: Routes = [
-  { path: '', redirectTo: 'pages/household-budget', pathMatch: 'full' },
+  { path: '', redirectTo: 'pages/home', pathMatch: 'full' },
   {
     path: 'pages/household-budget',
     component: HouseholdBudget,
@@ -20,6 +21,10 @@ const routes: Routes = [
   {
     path: 'pages/reading-journal',
     component: ReadingJournal
+  },
+  {
+    path: 'pages/home',
+    component: Home
   }
 ];
 
